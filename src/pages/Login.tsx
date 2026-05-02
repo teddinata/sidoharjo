@@ -203,14 +203,14 @@ const Login = () => {
           </form>
 
           {/* Hint untuk development */}
-          <div className="mt-8 rounded-lg bg-muted/50 border border-border px-4 py-3">
+          {/* <div className="mt-8 rounded-lg bg-muted/50 border border-border px-4 py-3">
             <p className="text-xs font-medium text-muted-foreground mb-1">
               Akun Default (Development)
             </p>
             <p className="text-xs text-muted-foreground font-mono">
               admin@sidoharjo.go.id / password
             </p>
-          </div>
+          </div> */}
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Lupa password? Hubungi administrator desa.
