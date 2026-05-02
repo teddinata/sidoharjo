@@ -1,0 +1,1051 @@
+{
+  "info": {
+    "_postman_id": "surat-sidoharjo-2026-full",
+    "name": "Surat Sidoharjo API — Full",
+    "description": "Dokumentasi lengkap API Sistem Pelayanan Surat Kalurahan Sidoharjo.\n\nBase URL: https://raharja-sidoharjo.test\n\nCara pakai:\n1. Jalankan request Login\n2. Token otomatis tersimpan ke variable `token` via test script\n3. Semua request protected otomatis pakai token tersebut\n\nRole:\n- admin: akses semua endpoint\n- petugas: tidak bisa akses /users, /settings PUT, /upload",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://raharja-sidoharjo.test", "type": "string" },
+    { "key": "token", "value": "", "type": "string", "description": "Auto-filled setelah Login" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "description": "Endpoint autentikasi — login, cek user aktif, logout.",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('Token tersimpan:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sidoharjo.desa.id\",\n  \"password\": \"sidoharjo2026\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] },
+            "description": "Login admin. Token otomatis tersimpan ke variable collection."
+          },
+          "response": [
+            {
+              "name": "Login Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Login berhasil.\",\n  \"token\": \"1|abcdefghijklmnopqrstuvwxyz123456\",\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"Administrator\",\n    \"email\": \"admin@sidoharjo.desa.id\",\n    \"role\": \"admin\"\n  }\n}"
+            },
+            {
+              "name": "Login Gagal",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"email\": [\"Email atau password salah.\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login (Petugas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"petugas@sidoharjo.desa.id\",\n  \"password\": \"petugas2026\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] },
+            "description": "Ambil data user yang sedang login."
+          },
+          "response": [
+            {
+              "name": "Me Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"Administrator\",\n    \"email\": \"admin@sidoharjo.desa.id\",\n    \"role\": \"admin\",\n    \"last_login_at\": \"2026-04-26T14:00:00.000000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api", "auth", "logout"] },
+            "description": "Hapus token aktif."
+          },
+          "response": [
+            {
+              "name": "Logout Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Logout berhasil.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👥 Penduduk",
+      "description": "Pencarian penduduk untuk autocomplete dan detail by NIK.",
+      "item": [
+        {
+          "name": "Cari Penduduk (Nama)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/penduduk?search=murdiyanto",
+              "host": ["{{base_url}}"], "path": ["api", "penduduk"],
+              "query": [{ "key": "search", "value": "murdiyanto", "description": "Minimal 3 karakter. Bisa NIK atau nama." }]
+            },
+            "description": "Autocomplete untuk form surat. Max 15 hasil."
+          },
+          "response": [
+            {
+              "name": "Hasil Pencarian",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 5,\n      \"nik\": \"3401112109640001\",\n      \"nama_lengkap\": \"Murdiyanto\",\n      \"tempat_lahir\": \"Kulon Progo\",\n      \"tanggal_lahir\": \"1964-09-21\",\n      \"tanggal_lahir_format\": \"21 September 1964\",\n      \"umur\": 61,\n      \"jenis_kelamin\": \"Laki-laki\",\n      \"pedukuhan\": \"Nglambur\",\n      \"rt\": \"1\",\n      \"rw\": \"1\",\n      \"pekerjaan\": \"Wiraswasta\",\n      \"status_perkawinan\": \"Kawin\",\n      \"hub_keluarga\": \"Kepala Keluarga\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Cari Penduduk (NIK)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/penduduk?search=3401112109640001",
+              "host": ["{{base_url}}"], "path": ["api", "penduduk"],
+              "query": [{ "key": "search", "value": "3401112109640001" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detail Penduduk by NIK",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/penduduk/3401112109640001",
+              "host": ["{{base_url}}"], "path": ["api", "penduduk", "3401112109640001"]
+            },
+            "description": "Data lengkap penduduk untuk auto-fill form surat."
+          },
+          "response": [
+            {
+              "name": "Detail Penduduk",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"id\": 5,\n    \"no_kk\": \"3401110601053227\",\n    \"nik\": \"3401112109640001\",\n    \"nama_lengkap\": \"Murdiyanto\",\n    \"tempat_lahir\": \"Kulon Progo\",\n    \"tanggal_lahir\": \"1964-09-21\",\n    \"tanggal_lahir_format\": \"21 September 1964\",\n    \"umur\": 61,\n    \"jenis_kelamin\": \"Laki-laki\",\n    \"bin_binti\": \"Murdiyanto bin Amat Karsin\",\n    \"agama\": \"Islam\",\n    \"pendidikan\": \"SD\",\n    \"pekerjaan\": \"Wiraswasta\",\n    \"status_perkawinan\": \"Kawin\",\n    \"hub_keluarga\": \"Kepala Keluarga\",\n    \"pedukuhan\": \"Nglambur\",\n    \"rt\": \"1\",\n    \"rw\": \"1\",\n    \"alamat_lengkap\": \"Nglambur, RT 1/RW 1\",\n    \"nama_ketua_rt\": \"Aryadi\",\n    \"nama_ketua_rw\": \"Somorejo\",\n    \"nama_ayah\": \"Amat Karsin\",\n    \"nama_ibu\": \"Tukinem\",\n    \"is_aktif\": true\n  }\n}"
+            },
+            {
+              "name": "Tidak Ditemukan",
+              "status": "Not Found", "code": 404,
+              "body": "{\n  \"message\": \"Penduduk dengan NIK 1234567890123456 tidak ditemukan.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📄 Jenis Surat",
+      "description": "Katalog 33 jenis surat untuk dropdown dan form dinamis.",
+      "item": [
+        {
+          "name": "List Semua Jenis Surat",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat", "host": ["{{base_url}}"], "path": ["api", "jenis-surat"] },
+            "description": "Dikelompokkan per kategori. Dipakai untuk dropdown pilih jenis surat."
+          },
+          "response": [
+            {
+              "name": "List Jenis Surat",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"Pernikahan\": [\n      { \"id\": 1, \"kode\": \"NIKAH_P\", \"nama\": \"Pengantar Perkawinan (Perempuan)\", \"kategori\": \"Pernikahan\", \"nomor_format\": \"474.2\", \"melibatkan_pihak_luar\": true, \"urutan\": 1 },\n      { \"id\": 2, \"kode\": \"NIKAH_L\", \"nama\": \"Pengantar Perkawinan (Laki-laki)\", \"kategori\": \"Pernikahan\", \"nomor_format\": \"474.2\", \"melibatkan_pihak_luar\": true, \"urutan\": 2 }\n    ],\n    \"Kependudukan\": [\n      { \"id\": 8, \"kode\": \"DOMISILI\", \"nama\": \"Surat Keterangan Domisili\", \"kategori\": \"Kependudukan\", \"nomor_format\": \"474.4\", \"melibatkan_pihak_luar\": false, \"urutan\": 8 }\n    ],\n    \"Kelahiran & Kematian\": [],\n    \"Ekonomi & Sosial\": [],\n    \"Keterangan Lain\": []\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Jenis Surat — DOMISILI",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat/DOMISILI", "host": ["{{base_url}}"], "path": ["api", "jenis-surat", "DOMISILI"] },
+            "description": "Ambil fields_tambahan untuk render form dinamis di frontend."
+          },
+          "response": [
+            {
+              "name": "Detail DOMISILI",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"id\": 8,\n    \"kode\": \"DOMISILI\",\n    \"nama\": \"Surat Keterangan Domisili\",\n    \"kategori\": \"Kependudukan\",\n    \"nomor_format\": \"474.4\",\n    \"fields_tambahan\": [\n      { \"key\": \"keperluan\", \"label\": \"Keperluan\", \"type\": \"text\", \"required\": true }\n    ],\n    \"melibatkan_pihak_luar\": false,\n    \"template_blade\": \"surat.domisili\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Jenis Surat — NIKAH_L",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat/NIKAH_L", "host": ["{{base_url}}"], "path": ["api", "jenis-surat", "NIKAH_L"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Detail Jenis Surat — USAHA",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat/USAHA", "host": ["{{base_url}}"], "path": ["api", "jenis-surat", "USAHA"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Detail Jenis Surat — KEHILANGAN",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat/KEHILANGAN", "host": ["{{base_url}}"], "path": ["api", "jenis-surat", "KEHILANGAN"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Detail Jenis Surat — TIDAK_MAMPU",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/jenis-surat/TIDAK_MAMPU", "host": ["{{base_url}}"], "path": ["api", "jenis-surat", "TIDAK_MAMPU"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Settings",
+      "description": "Konfigurasi kelurahan — kop surat, data lurah.",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/settings", "host": ["{{base_url}}"], "path": ["api", "settings"] }
+          },
+          "response": [
+            {
+              "name": "Get Settings",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"nama_kelurahan\": \"Sidoharjo\",\n    \"nama_kapanewon\": \"Samigaluh\",\n    \"nama_kabupaten\": \"Kulon Progo\",\n    \"nama_provinsi\": \"Daerah Istimewa Yogyakarta\",\n    \"nama_lengkap\": \"Kalurahan Sidoharjo, Kapanewon Samigaluh, Kabupaten Kulon Progo\",\n    \"nama_lurah\": \"Drs. Supriyanto\",\n    \"nip_lurah\": \"196501011990031001\",\n    \"alamat\": \"Jl. Samigaluh KM 2, Sidoharjo\",\n    \"kode_pos\": \"55673\",\n    \"telepon\": \"(0274) 123456\",\n    \"email\": \"sidoharjo@kulonprogokab.go.id\",\n    \"website\": \"sidoharjo.kulonprogokab.go.id\",\n    \"logo_path\": \"kelurahan/logo.png\",\n    \"ttd_lurah_path\": \"kelurahan/ttd_lurah.png\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Settings (Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_lurah\": \"Drs. Supriyanto\",\n  \"nip_lurah\": \"196501011990031001\",\n  \"alamat\": \"Jl. Samigaluh KM 2, Sidoharjo, Samigaluh\",\n  \"kode_pos\": \"55673\",\n  \"telepon\": \"(0274) 123456\",\n  \"email\": \"sidoharjo@kulonprogokab.go.id\",\n  \"website\": \"sidoharjo.kulonprogokab.go.id\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/settings", "host": ["{{base_url}}"], "path": ["api", "settings"] },
+            "description": "Hanya admin. Gunakan PATCH untuk update sebagian field."
+          },
+          "response": [
+            {
+              "name": "Update Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Pengaturan berhasil disimpan.\"\n}"
+            },
+            {
+              "name": "Bukan Admin",
+              "status": "Forbidden", "code": 403,
+              "body": "{\n  \"message\": \"Akses ditolak. Hanya admin yang diizinkan.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📤 Upload",
+      "description": "Upload logo dan tanda tangan digital Lurah. Admin only.",
+      "item": [
+        {
+          "name": "Upload Logo Kalurahan",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "logo", "type": "file", "description": "PNG atau JPG, max 2MB" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/upload/logo", "host": ["{{base_url}}"], "path": ["api", "upload", "logo"] },
+            "description": "Upload logo untuk kop surat. Format: PNG/JPG, max 2MB."
+          },
+          "response": [
+            {
+              "name": "Upload Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Logo berhasil diupload.\",\n  \"logo_path\": \"kelurahan/logo.png\",\n  \"logo_url\": \"https://raharja-sidoharjo.test/storage/kelurahan/logo.png\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload TTD Lurah",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "ttd", "type": "file", "description": "PNG transparan, max 1MB" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/api/upload/ttd-lurah", "host": ["{{base_url}}"], "path": ["api", "upload", "ttd-lurah"] },
+            "description": "Upload TTD Lurah untuk dicetak di surat. Format: PNG transparan, max 1MB."
+          },
+          "response": [
+            {
+              "name": "Upload Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Tanda tangan Lurah berhasil diupload.\",\n  \"ttd_path\": \"kelurahan/ttd_lurah.png\",\n  \"ttd_url\": \"https://raharja-sidoharjo.test/storage/kelurahan/ttd_lurah.png\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus TTD Lurah",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/upload/ttd-lurah", "host": ["{{base_url}}"], "path": ["api", "upload", "ttd-lurah"] }
+          },
+          "response": [
+            {
+              "name": "Hapus Berhasil",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Tanda tangan Lurah berhasil dihapus.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📝 Surat",
+      "description": "Pembuatan dan download surat. 33 jenis tersedia.",
+      "item": [
+        {
+          "name": "Buat Surat — Domisili",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"DOMISILI\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"keperluan\": \"Persyaratan Beasiswa\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": [
+            {
+              "name": "Surat Terbit",
+              "status": "Created", "code": 201,
+              "body": "{\n  \"message\": \"Surat Surat Keterangan Domisili berhasil diterbitkan.\",\n  \"data\": {\n    \"id\": 1,\n    \"nomor_surat\": \"474.4/001/2026\",\n    \"status\": \"terbit\",\n    \"jenis_surat\": \"Surat Keterangan Domisili\",\n    \"penduduk\": \"Murdiyanto\",\n    \"dibuat_pada\": \"26/04/2026 14:30\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Buat Surat — SKM (Tidak Mampu)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"TIDAK_MAMPU\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"keperluan\": \"Keringanan Biaya BPJS\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Pengantar Nikah (L)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"NIKAH_L\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_calon_istri\": \"Siti Nurhaliza\",\n    \"nik_calon_istri\": \"3401116001000001\",\n    \"tempat_lahir_istri\": \"Kulon Progo\",\n    \"tgl_lahir_istri\": \"2000-01-20\",\n    \"pekerjaan_istri\": \"Petani\",\n    \"alamat_istri\": \"Dusun Wonogiri RT 2/RW 1, Sidoharjo\",\n    \"tanggal_akad\": \"2026-06-01\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Pengantar Nikah (P)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 6,\n  \"jenis_surat_kode\": \"NIKAH_P\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_calon_suami\": \"Ahmad Fauzi\",\n    \"nik_calon_suami\": \"3401111001000001\",\n    \"tempat_lahir_suami\": \"Kulon Progo\",\n    \"tgl_lahir_suami\": \"1998-05-10\",\n    \"pekerjaan_suami\": \"Wiraswasta\",\n    \"alamat_suami\": \"Dusun Nglambur RT 1/RW 1, Sidoharjo\",\n    \"tanggal_akad\": \"2026-06-01\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Keterangan Usaha",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"USAHA\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_usaha\": \"Toko Sembako Makmur\",\n    \"jenis_usaha\": \"Perdagangan Sembako\",\n    \"alamat_usaha\": \"Nglambur RT 1/RW 1, Sidoharjo\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Usaha BRI",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"USAHA_BRI\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_usaha\": \"Toko Sembako Makmur\",\n    \"jenis_usaha\": \"Perdagangan Sembako\",\n    \"alamat_usaha\": \"Nglambur RT 1/RW 1, Sidoharjo\",\n    \"nomor_rekening\": \"12345678901\",\n    \"keperluan_kredit\": \"Modal Usaha\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Kehilangan",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"KEHILANGAN\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"barang_hilang\": \"Kartu Tanda Penduduk (KTP)\",\n    \"keterangan_hilang\": \"Hilang saat bepergian ke pasar pada tanggal 20 April 2026\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Kelahiran Baru",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"KELAHIRAN_BARU\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_bayi\": \"Muhammad Rizki\",\n    \"jenis_kelamin_bayi\": \"Laki-laki\",\n    \"tanggal_lahir_bayi\": \"2026-04-20\",\n    \"tempat_lahir_bayi\": \"Kulon Progo\",\n    \"nama_ayah\": \"Murdiyanto\",\n    \"nama_ibu\": \"Martiyah\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Kematian Baru",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"KEMATIAN_BARU\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"tanggal_meninggal\": \"2026-04-25\",\n    \"tempat_meninggal\": \"Rumah Sakit PKU Wates\",\n    \"sebab_meninggal\": \"Sakit\",\n    \"nama_pelapor\": \"Martiyah\",\n    \"hubungan_pelapor\": \"Istri\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — SKCK",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"SKCK\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"keperluan\": \"Melamar Pekerjaan\",\n    \"tujuan_instansi\": \"Polres Kulon Progo\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Penghasilan",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"PENGHASILAN\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"penghasilan_perbulan\": 1500000,\n    \"keperluan\": \"Persyaratan KPR Bank\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Harga Tanah",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"HARGA_TANAH\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"luas_tanah\": 250,\n    \"lokasi_tanah\": \"Dusun Nglambur, Sidoharjo\",\n    \"harga_per_m2\": 150000,\n    \"peruntukan\": \"Pertanian\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Ijin Keramaian",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"IJIN_KERAMAIAN\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"nama_acara\": \"Pengajian Akbar\",\n    \"tanggal_acara\": \"2026-05-10\",\n    \"tempat_acara\": \"Balai Dusun Nglambur\",\n    \"perkiraan_peserta\": 200\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Beda Identitas",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"BEDA_IDENTITAS\",\n  \"langsung_terbit\": true,\n  \"data_tambahan\": {\n    \"jenis_beda\": \"Nama\",\n    \"data_di_dokumen\": \"Murdiyanto\",\n    \"data_yang_benar\": \"Mur Diyanto\",\n    \"nama_dokumen\": \"Ijazah SD\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Surat — Draft",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"penduduk_id\": 5,\n  \"jenis_surat_kode\": \"DOMISILI\",\n  \"langsung_terbit\": false,\n  \"data_tambahan\": {\n    \"keperluan\": \"Keperluan Bank\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] },
+            "description": "langsung_terbit: false → surat tersimpan sebagai draft, nomor belum digenerate."
+          },
+          "response": [
+            {
+              "name": "Surat Draft",
+              "status": "Created", "code": 201,
+              "body": "{\n  \"message\": \"Surat Surat Keterangan Domisili berhasil dibuat sebagai draft.\",\n  \"data\": {\n    \"id\": 2,\n    \"nomor_surat\": null,\n    \"status\": \"draft\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail Surat",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/surat/1", "host": ["{{base_url}}"], "path": ["api", "surat", "1"] }
+          },
+          "response": [
+            {
+              "name": "Detail Surat",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"id\": 1,\n    \"nomor_surat\": \"474.4/001/2026\",\n    \"status\": \"terbit\",\n    \"jenis_surat\": \"Surat Keterangan Domisili\",\n    \"kategori\": \"Kependudukan\",\n    \"penduduk\": {\n      \"nik\": \"3401112109640001\",\n      \"nama_lengkap\": \"Murdiyanto\",\n      \"pedukuhan\": \"Nglambur\"\n    },\n    \"data_tambahan\": { \"keperluan\": \"Persyaratan Beasiswa\" },\n    \"data_pihak_luar\": null,\n    \"ttd\": {\n      \"atas_nama\": \"Drs. Supriyanto\",\n      \"jabatan\": \"Lurah Sidoharjo\",\n      \"nip\": \"196501011990031001\"\n    },\n    \"dibuat_oleh\": \"Administrator\",\n    \"dibuat_pada\": \"26/04/2026 14:30\",\n    \"dicetak_at\": null\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download PDF",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/pdf" }],
+            "url": { "raw": "{{base_url}}/api/surat/1/pdf", "host": ["{{base_url}}"], "path": ["api", "surat", "1", "pdf"] },
+            "description": "Klik 'Send and Download' di Postman untuk menyimpan file PDF."
+          },
+          "response": [
+            {
+              "name": "Surat Masih Draft",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"Hanya surat berstatus terbit yang bisa didownload.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download DOCX",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }],
+            "url": { "raw": "{{base_url}}/api/surat/1/docx", "host": ["{{base_url}}"], "path": ["api", "surat", "1", "docx"] },
+            "description": "Klik 'Send and Download' di Postman untuk menyimpan file DOCX."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Register Pelayanan",
+      "description": "Riwayat pelayanan, rekap, dan export Excel.",
+      "item": [
+        {
+          "name": "List Register",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/register?dari=2026-01-01&sampai=2026-12-31&per_page=20",
+              "host": ["{{base_url}}"], "path": ["api", "register"],
+              "query": [
+                { "key": "dari", "value": "2026-01-01", "description": "Filter dari tanggal (opsional)" },
+                { "key": "sampai", "value": "2026-12-31", "description": "Filter sampai tanggal (opsional)" },
+                { "key": "pedukuhan", "value": "", "description": "Filter pedukuhan (opsional)", "disabled": true },
+                { "key": "jenis", "value": "", "description": "Filter jenis pelayanan (opsional)", "disabled": true },
+                { "key": "per_page", "value": "20", "description": "Jumlah per halaman (5-100)" }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "List Register",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"nomor_register\": \"REG-2026-001\",\n      \"tanggal\": \"26/04/2026\",\n      \"jenis_pelayanan\": \"Surat Keterangan Domisili\",\n      \"nomor_surat\": \"474.4/001/2026\",\n      \"nama_pemohon\": \"Murdiyanto\",\n      \"nik_pemohon\": \"3401112109640001\",\n      \"pedukuhan\": \"Nglambur\",\n      \"petugas\": \"Administrator\",\n      \"keterangan\": null\n    }\n  ],\n  \"meta\": {\n    \"total\": 1,\n    \"per_page\": 20,\n    \"current_page\": 1,\n    \"last_page\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Register — Filter Pedukuhan",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/register?pedukuhan=Nglambur",
+              "host": ["{{base_url}}"], "path": ["api", "register"],
+              "query": [{ "key": "pedukuhan", "value": "Nglambur" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rekap Pelayanan",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/register/rekap?tahun=2026",
+              "host": ["{{base_url}}"], "path": ["api", "register", "rekap"],
+              "query": [{ "key": "tahun", "value": "2026", "description": "Default tahun berjalan" }]
+            },
+            "description": "Rekap per jenis surat, per pedukuhan, dan per bulan."
+          },
+          "response": [
+            {
+              "name": "Rekap 2026",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"tahun\": 2026,\n  \"total\": 15,\n  \"per_jenis\": [\n    { \"jenis\": \"Surat Keterangan Domisili\", \"jumlah\": 5 },\n    { \"jenis\": \"Surat Keterangan Tidak Mampu\", \"jumlah\": 4 },\n    { \"jenis\": \"Pengantar Perkawinan (Laki-laki)\", \"jumlah\": 3 }\n  ],\n  \"per_pedukuhan\": [\n    { \"pedukuhan\": \"Nglambur\", \"jumlah\": 8 },\n    { \"pedukuhan\": \"Nyemani\", \"jumlah\": 4 },\n    { \"pedukuhan\": \"Wonogiri\", \"jumlah\": 3 }\n  ],\n  \"per_bulan\": [\n    { \"bulan\": \"April\", \"jumlah\": 15 }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Export Register Excel",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }],
+            "url": {
+              "raw": "{{base_url}}/api/register/export?tahun=2026",
+              "host": ["{{base_url}}"], "path": ["api", "register", "export"],
+              "query": [
+                { "key": "tahun", "value": "2026" },
+                { "key": "dari", "value": "", "disabled": true },
+                { "key": "sampai", "value": "", "disabled": true },
+                { "key": "pedukuhan", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Export ke Excel. Isi 2 sheet: Register Pelayanan + Rekap.\nKlik 'Send and Download' untuk save file .xlsx."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 User Management",
+      "description": "Manajemen akun petugas dan admin. Semua endpoint admin only.",
+      "item": [
+        {
+          "name": "List User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] }
+          },
+          "response": [
+            {
+              "name": "List User",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Administrator\",\n      \"email\": \"admin@sidoharjo.desa.id\",\n      \"role\": \"admin\",\n      \"is_active\": true,\n      \"last_login_at\": \"26/04/2026 14:00\"\n    },\n    {\n      \"id\": 2,\n      \"name\": \"Petugas Pelayanan\",\n      \"email\": \"petugas@sidoharjo.desa.id\",\n      \"role\": \"petugas\",\n      \"is_active\": true,\n      \"last_login_at\": null\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Tambah User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Santoso\",\n  \"email\": \"budi@sidoharjo.desa.id\",\n  \"password\": \"budi12345\",\n  \"password_confirmation\": \"budi12345\",\n  \"role\": \"petugas\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] }
+          },
+          "response": [
+            {
+              "name": "User Ditambahkan",
+              "status": "Created", "code": 201,
+              "body": "{\n  \"message\": \"User Budi Santoso berhasil ditambahkan.\",\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@sidoharjo.desa.id\",\n    \"role\": \"petugas\"\n  }\n}"
+            },
+            {
+              "name": "Email Sudah Dipakai",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"The email has already been taken.\",\n  \"errors\": {\n    \"email\": [\"The email has already been taken.\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Detail User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users/3", "host": ["{{base_url}}"], "path": ["api", "users", "3"] }
+          },
+          "response": [
+            {
+              "name": "Detail User",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@sidoharjo.desa.id\",\n    \"role\": \"petugas\",\n    \"is_active\": true,\n    \"last_login_at\": null,\n    \"created_at\": \"26/04/2026\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Edit User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Budi Santoso S.E.\",\n  \"role\": \"admin\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/users/3", "host": ["{{base_url}}"], "path": ["api", "users", "3"] },
+            "description": "Semua field opsional. Hanya kirim field yang ingin diubah."
+          },
+          "response": [
+            {
+              "name": "User Diupdate",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"User Budi Santoso S.E. berhasil diupdate.\",\n  \"data\": {\n    \"id\": 3,\n    \"name\": \"Budi Santoso S.E.\",\n    \"email\": \"budi@sidoharjo.desa.id\",\n    \"role\": \"admin\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Ganti Password",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/users/3/password", "host": ["{{base_url}}"], "path": ["api", "users", "3", "password"] },
+            "description": "Token user yang diganti password akan dihapus — user harus login ulang."
+          },
+          "response": [
+            {
+              "name": "Password Diganti",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"Password Budi Santoso berhasil diganti. User harus login ulang.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Toggle Aktif / Nonaktif",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users/3/toggle-aktif", "host": ["{{base_url}}"], "path": ["api", "users", "3", "toggle-aktif"] },
+            "description": "Toggle status aktif/nonaktif. Tidak bisa nonaktifkan diri sendiri atau admin terakhir."
+          },
+          "response": [
+            {
+              "name": "User Dinonaktifkan",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"User Budi Santoso berhasil dinonaktifkan.\",\n  \"is_active\": false\n}"
+            },
+            {
+              "name": "User Diaktifkan",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"User Budi Santoso berhasil diaktifkan.\",\n  \"is_active\": true\n}"
+            },
+            {
+              "name": "Nonaktifkan Diri Sendiri",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"Tidak bisa menonaktifkan akun sendiri.\"\n}"
+            },
+            {
+              "name": "Admin Terakhir",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"Tidak bisa menonaktifkan admin terakhir yang aktif.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Hapus User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users/3", "host": ["{{base_url}}"], "path": ["api", "users", "3"] },
+            "description": "Tidak bisa hapus user yang sudah pernah membuat surat. Nonaktifkan saja."
+          },
+          "response": [
+            {
+              "name": "User Dihapus",
+              "status": "OK", "code": 200,
+              "body": "{\n  \"message\": \"User Budi Santoso berhasil dihapus.\"\n}"
+            },
+            {
+              "name": "Ada Riwayat Surat",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"User Budi Santoso tidak bisa dihapus karena sudah memiliki riwayat pembuatan surat. Nonaktifkan saja.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Error Reference",
+      "description": "Referensi error umum.",
+      "item": [
+        {
+          "name": "401 — Unauthenticated",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] },
+            "description": "Request tanpa token atau token expired."
+          },
+          "response": [
+            {
+              "name": "Unauthenticated",
+              "status": "Unauthorized", "code": 401,
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "403 — Forbidden (Bukan Admin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Login sebagai petugas lalu akses endpoint admin."
+          },
+          "response": [
+            {
+              "name": "Forbidden",
+              "status": "Forbidden", "code": 403,
+              "body": "{\n  \"message\": \"Akses ditolak. Hanya admin yang diizinkan.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "404 — Not Found",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/penduduk/9999999999999999", "host": ["{{base_url}}"], "path": ["api", "penduduk", "9999999999999999"] }
+          },
+          "response": [
+            {
+              "name": "Not Found",
+              "status": "Not Found", "code": 404,
+              "body": "{\n  \"message\": \"Penduduk dengan NIK 9999999999999999 tidak ditemukan.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "422 — Validation Error",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/surat", "host": ["{{base_url}}"], "path": ["api", "surat"] }
+          },
+          "response": [
+            {
+              "name": "Validation Error",
+              "status": "Unprocessable Content", "code": 422,
+              "body": "{\n  \"message\": \"The penduduk id field is required.\",\n  \"errors\": {\n    \"penduduk_id\": [\"The penduduk id field is required.\"],\n    \"jenis_surat_kode\": [\"The jenis surat kode field is required.\"]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

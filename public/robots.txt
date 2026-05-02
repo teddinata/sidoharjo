@@ -1,14 +1,8 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Raharja — Sistem Pelayanan Digital Kalurahan Sidoharjo
+# Kapanewon Samigaluh, Kabupaten Kulonprogo, DIY
+# Sistem ini bersifat internal, tidak diindeks oleh mesin pencari.
 
 User-agent: *
-Allow: /
+Disallow: /
+
+# Sitemap tidak tersedia (sistem internal)

@@ -1,4 +1,4 @@
-import { Surat, Penduduk, StatistikBulanan, JENIS_SURAT } from "@/types/surat";
+import { Surat, Penduduk, StatistikBulanan } from "@/types/surat";
 
 // Mock data untuk demo/presentasi
 
@@ -297,10 +297,7 @@ export const mockStatistikBulanan: StatistikBulanan[] = [
   }
 ];
 
-// Helper functions
-export function getJenisSuratInfo(id: string) {
-  return JENIS_SURAT.find(j => j.id === id);
-}
+
 
 export function formatTanggal(tanggal: string): string {
   return new Date(tanggal).toLocaleDateString("id-ID", {
