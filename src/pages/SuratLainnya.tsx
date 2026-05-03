@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useJenisSurat } from "@/hooks/useJenisSurat";
+import { SuratSubNav } from "@/components/surat/SuratSubNav";
 import { Loader2 } from "lucide-react";
 import { 
   Shield, 
@@ -35,6 +36,9 @@ const SuratLainnya = () => {
           <h1 className="text-2xl font-bold text-foreground">Surat Lainnya</h1>
           <p className="text-muted-foreground">Pilih jenis surat lainnya yang ingin dibuat</p>
         </div>
+
+        {/* Sub-navigation */}
+        <SuratSubNav />
 
         {/* Letter Types Grid */}
         {/* Letter Types Grid */}

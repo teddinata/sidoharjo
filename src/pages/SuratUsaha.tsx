@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useJenisSurat } from "@/hooks/useJenisSurat";
+import { SuratSubNav } from "@/components/surat/SuratSubNav";
 import { Loader2 } from "lucide-react";
 import { 
   Store, 
@@ -35,6 +36,9 @@ const SuratUsaha = () => {
           <h1 className="text-2xl font-bold text-foreground">Surat Usaha & Ekonomi</h1>
           <p className="text-muted-foreground">Pilih jenis surat usaha dan ekonomi yang ingin dibuat</p>
         </div>
+
+        {/* Sub-navigation */}
+        <SuratSubNav />
 
         {/* Letter Types Grid */}
         {/* Letter Types Grid */}
