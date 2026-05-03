@@ -199,15 +199,15 @@ export default function DataPenduduk() {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-xl border border-border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>NIK</TableHead>
+                <TableHead className="hidden sm:table-cell">NIK</TableHead>
                 <TableHead>Nama Lengkap</TableHead>
-                <TableHead>Pedukuhan</TableHead>
-                <TableHead>RT/RW</TableHead>
-                <TableHead>Pekerjaan</TableHead>
+                <TableHead className="hidden md:table-cell">Pedukuhan</TableHead>
+                <TableHead className="hidden lg:table-cell">RT/RW</TableHead>
+                <TableHead className="hidden lg:table-cell">Pekerjaan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -228,11 +228,16 @@ export default function DataPenduduk() {
               ) : (
                 rows.map((p) => (
                   <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-mono text-xs">{p.nik}</TableCell>
-                    <TableCell className="font-medium">{p.nama_lengkap}</TableCell>
-                    <TableCell>{p.pedukuhan}</TableCell>
-                    <TableCell>{p.rt}/{p.rw}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.pekerjaan}</TableCell>
+                    <TableCell className="hidden sm:table-cell font-mono text-xs">{p.nik}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>
+                        <p>{p.nama_lengkap}</p>
+                        <p className="text-xs text-muted-foreground sm:hidden">{p.pedukuhan}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{p.pedukuhan}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{p.rt}/{p.rw}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{p.pekerjaan}</TableCell>
                     <TableCell>
                       <Badge variant={p.is_aktif ? "default" : "secondary"}
                         className={p.is_aktif ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" : ""}>
@@ -244,16 +249,16 @@ export default function DataPenduduk() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailPenduduk(p)} title="Detail">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)} title="Edit">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex" onClick={() => openEdit(p)} title="Edit">
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex"
                           onClick={() => toggleMutation.mutate(p.id)}
                           disabled={toggleMutation.isPending}
                           title={p.is_aktif ? "Nonaktifkan" : "Aktifkan"}>
                           {p.is_aktif ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground" />}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex text-destructive hover:text-destructive"
                           onClick={() => setDeleteTarget(p)} title="Hapus">
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -284,7 +289,7 @@ export default function DataPenduduk() {
 
       {/* ── Detail Modal ─────────────────────────────────────────────────── */}
       <Dialog open={!!detailPenduduk} onOpenChange={(v) => !v && setDetailPenduduk(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>Detail Penduduk</DialogTitle>
           </DialogHeader>
@@ -333,11 +338,11 @@ export default function DataPenduduk() {
 
       {/* ── Form Modal (Tambah / Edit) ────────────────────────────────────── */}
       <Dialog open={formOpen} onOpenChange={(v) => !v && setFormOpen(false)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle>{editTarget ? "Edit Penduduk" : "Tambah Penduduk Baru"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
             <FormField label="NIK *" id="nik">
               <Input id="nik" value={form.nik} onChange={(e) => setField("nik", e.target.value)} maxLength={16} placeholder="16 digit NIK" />
             </FormField>

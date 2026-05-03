@@ -54,19 +54,19 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 lg:space-y-6 animate-fade-in">
         {/* Page Header */}
-        <div>
+        <div className="hidden lg:block">
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Selamat datang di Sistem Pelayanan Digital {namaKelurahan}</p>
+          <p className="text-muted-foreground text-sm">Selamat datang di Sistem Pelayanan Digital {namaKelurahan}</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats Grid — 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           <StatCard
             title="Surat Hari Ini"
             value={statHariIni ?? "—"}
-            subtitle="Total layanan hari ini"
+            subtitle="Total hari ini"
             icon={FileText}
             variant="primary"
           />
@@ -74,18 +74,18 @@ const Dashboard = () => {
             title="Surat Bulan Ini"
             value={statBulanIni ?? "—"}
             icon={Calendar}
-            subtitle={`Bulan ${new Date().toLocaleDateString("id-ID", { month: "long" })}`}
+            subtitle={`Bulan ${new Date().toLocaleDateString("id-ID", { month: "short" })}`}
           />
           <StatCard
-            title={`Total Tahun ${thisYear}`}
+            title={`Total ${thisYear}`}
             value={statTahunIni ?? "—"}
             icon={TrendingUp}
-            subtitle="Seluruh jenis surat"
+            subtitle="Semua jenis"
           />
           <StatCard
-            title="Penduduk Terdaftar"
+            title="Penduduk"
             value={statPenduduk !== null ? statPenduduk.toLocaleString("id-ID") : "—"}
-            subtitle="Warga aktif & nonaktif"
+            subtitle="Terdaftar"
             icon={Users}
           />
         </div>
@@ -93,18 +93,18 @@ const Dashboard = () => {
         {/* Quick Access */}
         <QuickAccess />
 
-        {/* Charts & Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <MonthlyChart />
           <CategoryChart />
         </div>
 
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity + Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <RecentActivity />
 
-          {/* Info Card dari Settings */}
-          <div className="rounded-xl bg-gradient-to-br from-primary to-navy-light p-6 text-primary-foreground">
+          {/* Info Card — hidden on small mobile, show on md+ */}
+          <div className="hidden md:block rounded-xl bg-gradient-to-br from-primary to-navy-light p-6 text-primary-foreground">
             <h3 className="text-lg font-semibold mb-2">{namaKelurahan}</h3>
             <p className="text-sm text-primary-foreground/80 mb-4">
               Sistem Pelayanan Administrasi Digital
@@ -132,6 +132,7 @@ const Dashboard = () => {
       </div>
     </AppLayout>
   );
+
 };
 
 export default Dashboard;

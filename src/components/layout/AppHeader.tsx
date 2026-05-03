@@ -1,74 +1,70 @@
-import { Bell, Search, Wifi, WifiOff } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Dashboard",
+  "/surat/kependudukan": "Surat Kependudukan",
+  "/surat/usaha": "Surat Usaha & Ekonomi",
+  "/surat/lainnya": "Surat Lainnya",
+  "/arsip": "Arsip Data",
+  "/laporan": "Laporan & Statistik",
+  "/penduduk": "Data Penduduk",
+  "/pengaturan": "Pengaturan",
+  "/users": "Manajemen User",
+};
 
 export function AppHeader() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const location = useLocation();
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
+  // Resolve page title — match exact first, then prefix
+  const pageTitle = PAGE_TITLES[location.pathname]
+    ?? Object.entries(PAGE_TITLES).find(([k]) => k !== "/" && location.pathname.startsWith(k))?.[1]
+    ?? "Raharja";
+
   return (
-    <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
-      {/* Search */}
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Cari nama, NIK, atau nomor surat..."
-            className="pl-10 bg-background"
-          />
-        </div>
+    <header className="h-14 lg:h-16 border-b border-border bg-card px-4 lg:px-6 flex items-center justify-between gap-3 flex-shrink-0">
+      {/* Page title on mobile, search placeholder on desktop */}
+      <div className="flex items-center gap-3 min-w-0">
+        <h2 className="font-semibold text-foreground truncate text-sm lg:text-base">
+          {pageTitle}
+        </h2>
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
         {/* Online/Offline Status */}
-        <Badge 
+        <Badge
           variant={isOnline ? "default" : "destructive"}
-          className={`gap-1.5 ${isOnline ? 'bg-success hover:bg-success/90' : ''}`}
+          className={`gap-1 text-xs ${isOnline ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/15" : ""}`}
         >
           {isOnline ? (
-            <>
-              <Wifi className="w-3 h-3" />
-              Online
-            </>
+            <><Wifi className="w-3 h-3" /><span className="hidden sm:inline">Online</span></>
           ) : (
-            <>
-              <WifiOff className="w-3 h-3" />
-              Offline
-            </>
+            <><WifiOff className="w-3 h-3" /><span className="hidden sm:inline">Offline</span></>
           )}
         </Badge>
 
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive rounded-full text-[10px] text-destructive-foreground flex items-center justify-center">
-            3
-          </span>
-        </Button>
-
-        {/* Date */}
-        <div className="text-sm text-muted-foreground">
+        {/* Date — hidden on small mobile */}
+        <div className="hidden md:block text-sm text-muted-foreground whitespace-nowrap">
           {new Date().toLocaleDateString("id-ID", {
-            weekday: "long",
+            weekday: "short",
             day: "numeric",
-            month: "long",
-            year: "numeric"
+            month: "short",
+            year: "numeric",
           })}
         </div>
       </div>
