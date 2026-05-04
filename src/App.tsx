@@ -21,6 +21,8 @@ import DataPenduduk from "./pages/DataPenduduk";
 import Pengaturan from "./pages/Pengaturan";
 import ManajemenUser from "./pages/ManajemenUser";
 import NotFound from "./pages/NotFound";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,7 +45,6 @@ const App = () => (
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
-
             {/* Protected — butuh login */}
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Dashboard />} />
@@ -60,6 +61,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FeedbackWidget />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
