@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { registerApi, RegisterRekap } from "@/lib/api";
@@ -84,36 +84,54 @@ export function CategoryChart() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const max = data[0]?.value ?? 1;
-
   return (
     <Card className="flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">Jenis Surat Terbanyak</CardTitle>
         <p className="text-sm text-muted-foreground">Tahun {new Date().getFullYear()}</p>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 flex flex-col gap-3">
         {isLoading ? <ChartLoader /> : (
-          <ol className="space-y-2.5">
-            {data.map((entry, i) => (
-              <li key={i} className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold text-muted-foreground w-4 shrink-0 text-right">{i + 1}</span>
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1 mb-0.5">
-                    <span className="text-xs font-medium truncate">{entry.name}</span>
-                    <span className="text-xs font-bold tabular-nums shrink-0">{entry.value}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${(entry.value / max) * 100}%`, backgroundColor: entry.color }}
-                    />
-                  </div>
+          <>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Custom legend — wraps di dalam card, tidak overflow */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {data.map((entry, i) => (
+                <div key={i} className="flex items-center gap-1.5 min-w-0 max-w-full">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+                  <span className="text-xs text-muted-foreground truncate">{entry.name}</span>
+                  <span className="text-xs font-semibold tabular-nums shrink-0">{entry.value}</span>
                 </div>
-              </li>
-            ))}
-          </ol>
+              ))}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
