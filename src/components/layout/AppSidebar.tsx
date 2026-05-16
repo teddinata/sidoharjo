@@ -118,7 +118,7 @@ export function AppSidebar({ className }: SidebarProps) {
             <span className="text-sidebar-primary-foreground font-bold text-lg">S</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Desa Sidoharjo</h1>
+            <h1 className="font-bold text-lg leading-tight">Kalurahan Sidoharjo</h1>
             <p className="text-xs text-sidebar-foreground/70">Sistem Pelayanan Digital</p>
           </div>
         </div>

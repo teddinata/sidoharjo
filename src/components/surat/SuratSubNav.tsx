@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, Store, Shield, Pencil } from "lucide-react";
+import { Home, Store, Shield, Briefcase } from "lucide-react";
 
 const suratTabs = [
   { label: "Kependudukan", icon: Home, href: "/surat/kependudukan" },
   { label: "Usaha & Ekonomi", icon: Store, href: "/surat/usaha" },
   { label: "Lainnya", icon: Shield, href: "/surat/lainnya" },
-  { label: "Surat Kustom", icon: Pencil, href: "/surat/buat/CUSTOM" },
+  { label: "Undangan & Perkantoran", icon: Briefcase, href: "/surat/perkantoran" },
 ];
 
 /**
