@@ -152,6 +152,12 @@ export const registerApi = {
       `register-${params?.tahun ?? new Date().getFullYear()}.xlsx`
     );
   },
+
+  update: (id: number, payload: RegisterUpdatePayload) =>
+    api.put<{ message: string; data: RegisterItem }>(`/register/${id}`, payload),
+
+  destroy: (id: number) =>
+    api.delete<{ message: string }>(`/register/${id}`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,6 +321,7 @@ export interface JenisSuratDetail extends JenisSuratItem {
     type: string;
     required: boolean;
     options?: string[];
+    placeholder?: string;
   }>;
   template_blade: string;
 }
@@ -397,6 +404,13 @@ export interface RegisterItem {
   pedukuhan: string;
   petugas: string;
   keterangan: string | null;
+}
+
+export interface RegisterUpdatePayload {
+  jenis_pelayanan?: string;
+  tanggal_pelayanan?: string; // "YYYY-MM-DD"
+  keterangan?: string | null;
+  pedukuhan_pemohon?: string;
 }
 
 export interface RegisterListParams {

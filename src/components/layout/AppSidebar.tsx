@@ -15,6 +15,7 @@ import {
   UserCog,
   Menu,
   X,
+  Pencil,
 } from "lucide-react";
 import {
   Collapsible,
@@ -40,6 +41,7 @@ const menuItems = [
       { title: "Kependudukan", icon: Home, href: "/surat/kependudukan" },
       { title: "Usaha & Ekonomi", icon: Store, href: "/surat/usaha" },
       { title: "Lainnya", icon: Shield, href: "/surat/lainnya" },
+      { title: "Surat Kustom", icon: Pencil, href: "/surat/buat/CUSTOM" },
     ],
   },
   { title: "Arsip Data", icon: Search, href: "/arsip" },

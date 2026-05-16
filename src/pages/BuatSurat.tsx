@@ -401,6 +401,7 @@ const BuatSurat = () => {
                           <Input
                             id={field.key}
                             type="text"
+                            placeholder={field.placeholder}
                             value={dataTambahan[field.key] ?? ""}
                             onChange={(e) =>
                               setDataTambahan((prev) => ({ ...prev, [field.key]: e.target.value }))

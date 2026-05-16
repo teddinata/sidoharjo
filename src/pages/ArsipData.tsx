@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -11,12 +13,26 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Search, Filter, Download, Eye, ChevronRight, ChevronLeft,
-  FileText, Loader2, AlertCircle, RefreshCw,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Download, Eye, ChevronRight, ChevronLeft,
+  FileText, Loader2, AlertCircle, RefreshCw, Pencil, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { registerApi, suratApi, RegisterItem, RegisterListParams } from "@/lib/api";
+import {
+  registerApi, suratApi, RegisterItem, RegisterListParams, RegisterUpdatePayload,
+} from "@/lib/api";
 import { PADUKUHAN_LIST } from "@/types/surat";
+import { useAuth } from "@/contexts/AuthContext";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+/** "26/04/2026" → "2026-04-26" for <input type="date"> */
+function parseTanggal(tanggal: string): string {
+  const [d, m, y] = tanggal.split("/");
+  return `${y}-${m}-${d}`;
+}
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 interface Filters {
@@ -46,17 +62,11 @@ function useRegisterList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<Filters>(DEFAULT_FILTERS);
 
-  // Debounce untuk search field — tidak ada di register, tapi untuk dari/sampai yang diketik
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const fetchData = useCallback(async (f: Filters) => {
     setIsLoading(true);
     setIsError(false);
     try {
-      const params: RegisterListParams = {
-        page: f.page,
-        per_page: f.per_page,
-      };
+      const params: RegisterListParams = { page: f.page, per_page: f.per_page };
       if (f.dari) params.dari = f.dari;
       if (f.sampai) params.sampai = f.sampai;
       if (f.pedukuhan) params.pedukuhan = f.pedukuhan;
@@ -78,23 +88,30 @@ function useRegisterList() {
   useEffect(() => { fetchData(filters); }, [filters, fetchData]);
 
   const setFilters = useCallback((partial: Partial<Filters>) => {
-    setFiltersState((prev) => ({
-      ...prev,
-      ...partial,
-      page: partial.page ?? 1,
-    }));
+    setFiltersState((prev) => ({ ...prev, ...partial, page: partial.page ?? 1 }));
+  }, []);
+
+  const updateItem = useCallback((updated: RegisterItem) => {
+    setData((prev) => prev.map((item) => item.id === updated.id ? updated : item));
+  }, []);
+
+  const removeItem = useCallback((id: number) => {
+    setData((prev) => prev.filter((item) => item.id !== id));
+    setMeta((prev) => prev ? { ...prev, total: prev.total - 1 } : prev);
   }, []);
 
   return {
     data, meta, isLoading, isError, errorMessage, filters,
     setFilters,
     refresh: () => fetchData(filters),
+    updateItem,
+    removeItem,
   };
 }
 
 // ── Detail Modal ──────────────────────────────────────────────────────────────
 function DetailModal({
-  item, open, onClose,
+  item, onClose,
 }: { item: RegisterItem | null; open: boolean; onClose: () => void }) {
   const [isDownloading, setIsDownloading] = useState<"pdf" | "docx" | null>(null);
   if (!item) return null;
@@ -113,16 +130,9 @@ function DetailModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-card rounded-xl border shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card rounded-xl border shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 space-y-5">
-          {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-semibold text-lg">Detail Register</h2>
@@ -131,7 +141,6 @@ function DetailModal({
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none mt-1">×</button>
           </div>
 
-          {/* Info */}
           <div className="rounded-lg bg-muted/50 p-4 space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
               {[
@@ -154,7 +163,6 @@ function DetailModal({
             </div>
           </div>
 
-          {/* Pemohon */}
           <div className="space-y-2.5 text-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pemohon</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -171,22 +179,13 @@ function DetailModal({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" size="sm" onClick={onClose}>Tutup</Button>
-            <Button
-              variant="outline" size="sm"
-              onClick={() => handleDownload("docx")}
-              disabled={!!isDownloading}
-            >
+            <Button variant="outline" size="sm" onClick={() => handleDownload("docx")} disabled={!!isDownloading}>
               {isDownloading === "docx" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
               DOCX
             </Button>
-            <Button
-              size="sm"
-              onClick={() => handleDownload("pdf")}
-              disabled={!!isDownloading}
-            >
+            <Button size="sm" onClick={() => handleDownload("pdf")} disabled={!!isDownloading}>
               {isDownloading === "pdf" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
               PDF
             </Button>
@@ -197,10 +196,169 @@ function DetailModal({
   );
 }
 
+// ── Edit Modal ────────────────────────────────────────────────────────────────
+interface EditForm {
+  jenis_pelayanan: string;
+  tanggal_pelayanan: string;
+  pedukuhan_pemohon: string;
+  keterangan: string;
+}
+
+function EditModal({
+  item, open, onClose, onSaved,
+}: {
+  item: RegisterItem | null;
+  open: boolean;
+  onClose: () => void;
+  onSaved: (updated: RegisterItem) => void;
+}) {
+  const [form, setForm] = useState<EditForm>({
+    jenis_pelayanan: "",
+    tanggal_pelayanan: "",
+    pedukuhan_pemohon: "",
+    keterangan: "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (item) {
+      setForm({
+        jenis_pelayanan: item.jenis_pelayanan,
+        tanggal_pelayanan: parseTanggal(item.tanggal),
+        pedukuhan_pemohon: item.pedukuhan,
+        keterangan: item.keterangan ?? "",
+      });
+    }
+  }, [item]);
+
+  if (!item || !open) return null;
+
+  const set = (key: keyof EditForm, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async () => {
+    if (!form.jenis_pelayanan.trim() || !form.tanggal_pelayanan || !form.pedukuhan_pemohon) {
+      toast.error("Jenis pelayanan, tanggal, dan pedukuhan wajib diisi.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const payload: RegisterUpdatePayload = {
+        jenis_pelayanan: form.jenis_pelayanan.trim(),
+        tanggal_pelayanan: form.tanggal_pelayanan,
+        pedukuhan_pemohon: form.pedukuhan_pemohon,
+        keterangan: form.keterangan.trim() || null,
+      };
+      const { data: res } = await registerApi.update(item.id, payload);
+      onSaved(res.data);
+      toast.success("Data register berhasil diperbarui.");
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Gagal memperbarui data.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card rounded-xl border shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 space-y-5">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-lg">Edit Register</h2>
+              <p className="text-sm font-mono text-muted-foreground mt-0.5">{item.nomor_register}</p>
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none mt-1">×</button>
+          </div>
+
+          {/* Read-only info */}
+          <div className="rounded-lg bg-muted/40 px-4 py-3 text-sm grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <div>
+              <p className="text-xs text-muted-foreground">Pemohon</p>
+              <p className="font-medium">{item.nama_pemohon}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">No. Surat</p>
+              <p className="font-medium font-mono text-xs">{item.nomor_surat ?? "-"}</p>
+            </div>
+          </div>
+
+          {/* Editable fields */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tanggal Pelayanan</Label>
+                <Input
+                  type="date"
+                  value={form.tanggal_pelayanan}
+                  onChange={(e) => set("tanggal_pelayanan", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Pedukuhan</Label>
+                <Select
+                  value={form.pedukuhan_pemohon || ""}
+                  onValueChange={(v) => set("pedukuhan_pemohon", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih pedukuhan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PADUKUHAN_LIST.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Jenis Pelayanan</Label>
+              <Input
+                value={form.jenis_pelayanan}
+                onChange={(e) => set("jenis_pelayanan", e.target.value)}
+                placeholder="Contoh: Surat Keterangan Domisili"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Keterangan <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+              <Textarea
+                value={form.keterangan}
+                onChange={(e) => set("keterangan", e.target.value)}
+                placeholder="Catatan tambahan..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" onClick={onClose} disabled={isSaving}>Batal</Button>
+            <Button onClick={handleSubmit} disabled={isSaving}>
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Simpan Perubahan
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Halaman utama ─────────────────────────────────────────────────────────────
 const ArsipData = () => {
-  const { data, meta, isLoading, isError, errorMessage, filters, setFilters, refresh } = useRegisterList();
-  const [selected, setSelected] = useState<RegisterItem | null>(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const { data, meta, isLoading, isError, errorMessage, filters, setFilters, refresh, updateItem, removeItem } = useRegisterList();
+
+  const [selected, setSelected]   = useState<RegisterItem | null>(null);
+  const [editTarget, setEditTarget] = useState<RegisterItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RegisterItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -216,6 +374,21 @@ const ArsipData = () => {
       toast.error("Gagal mengekspor data.");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await registerApi.destroy(deleteTarget.id);
+      removeItem(deleteTarget.id);
+      toast.success(`Register ${deleteTarget.nomor_register} berhasil dihapus.`);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Gagal menghapus register.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -246,25 +419,14 @@ const ArsipData = () => {
         <Card>
           <CardContent className="pt-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Dari tanggal */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Dari Tanggal</label>
-                <Input
-                  type="date"
-                  value={filters.dari}
-                  onChange={(e) => setFilters({ dari: e.target.value })}
-                />
+                <Input type="date" value={filters.dari} onChange={(e) => setFilters({ dari: e.target.value })} />
               </div>
-              {/* Sampai tanggal */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Sampai Tanggal</label>
-                <Input
-                  type="date"
-                  value={filters.sampai}
-                  onChange={(e) => setFilters({ sampai: e.target.value })}
-                />
+                <Input type="date" value={filters.sampai} onChange={(e) => setFilters({ sampai: e.target.value })} />
               </div>
-              {/* Pedukuhan */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Pedukuhan</label>
                 <Select
@@ -282,14 +444,8 @@ const ArsipData = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Tombol refresh */}
               <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  onClick={refresh}
-                  disabled={isLoading}
-                  className="w-full"
-                >
+                <Button variant="outline" onClick={refresh} disabled={isLoading} className="w-full">
                   <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
                   Muat Ulang
                 </Button>
@@ -370,10 +526,30 @@ const ArsipData = () => {
                             <TableCell className="hidden sm:table-cell text-sm">{item.jenis_pelayanan}</TableCell>
                             <TableCell className="hidden lg:table-cell font-mono text-xs">{item.nomor_surat}</TableCell>
                             <TableCell className="pr-6 text-right">
-                              <Button variant="ghost" size="sm" onClick={() => setSelected(item)}>
-                                <Eye className="w-4 h-4 mr-1.5" />
-                                Lihat
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => setSelected(item)}>
+                                  <Eye className="w-4 h-4 mr-1.5" />
+                                  Lihat
+                                </Button>
+                                {isAdmin && (
+                                  <>
+                                    <Button
+                                      variant="ghost" size="sm"
+                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                      onClick={() => setEditTarget(item)}
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost" size="sm"
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => setDeleteTarget(item)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -450,8 +626,49 @@ const ArsipData = () => {
         </Card>
       </div>
 
+      {/* Detail modal */}
       {selected && (
         <DetailModal item={selected} open={!!selected} onClose={() => setSelected(null)} />
+      )}
+
+      {/* Edit modal (admin only) */}
+      {isAdmin && (
+        <EditModal
+          item={editTarget}
+          open={!!editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={(updated) => {
+            updateItem(updated);
+            setEditTarget(null);
+          }}
+        />
+      )}
+
+      {/* Delete confirmation (admin only) */}
+      {isAdmin && (
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Register?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Register <span className="font-mono font-semibold">{deleteTarget?.nomor_register}</span> akan dihapus permanen.
+                Nomor register ini tidak akan digunakan ulang sehingga urutan tetap terjaga.
+                Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Ya, Hapus
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </AppLayout>
   );
