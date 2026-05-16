@@ -122,6 +122,9 @@ export const suratApi = {
   get: (id: number | string) =>
     api.get<{ data: SuratDetail }>(`/surat/${id}`),
 
+  update: (id: number | string, payload: { data_tambahan?: Record<string, string | number | boolean>; data_pihak_luar?: Record<string, string | number | boolean> }) =>
+    api.put<{ message: string; data_tambahan: Record<string, unknown> }>(`/surat/${id}`, payload),
+
   downloadPdf: (id: number | string, customFilename?: string) =>
     downloadFile(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`),
 
@@ -399,6 +402,8 @@ export interface RegisterItem {
   tanggal: string; // format "26/04/2026"
   jenis_pelayanan: string;
   nomor_surat: string;
+  surat_id: number | null;
+  jenis_surat_kode: string | null;
   nama_pemohon: string;
   nik_pemohon: string;
   pedukuhan: string;

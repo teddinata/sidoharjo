@@ -18,11 +18,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Download, Eye, ChevronRight, ChevronLeft,
-  FileText, Loader2, AlertCircle, RefreshCw, Pencil, Trash2,
+  FileText, Loader2, AlertCircle, RefreshCw, Pencil, Trash2, FilePen,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  registerApi, suratApi, RegisterItem, RegisterListParams, RegisterUpdatePayload,
+  registerApi, suratApi, jenisSuratApi,
+  RegisterItem, RegisterListParams, RegisterUpdatePayload, JenisSuratDetail,
 } from "@/lib/api";
 import { PADUKUHAN_LIST } from "@/types/surat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -348,6 +349,169 @@ function EditModal({
   );
 }
 
+// ── Edit Surat Modal ──────────────────────────────────────────────────────────
+function EditSuratModal({
+  item, open, onClose, onSaved,
+}: {
+  item: RegisterItem | null;
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [jenisSurat, setJenisSurat] = useState<JenisSuratDetail | null>(null);
+  const [dataTambahan, setDataTambahan] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open || !item?.surat_id || !item?.jenis_surat_kode) return;
+    setIsLoading(true);
+    setJenisSurat(null);
+    Promise.all([
+      suratApi.get(item.surat_id),
+      jenisSuratApi.get(item.jenis_surat_kode),
+    ])
+      .then(([suratRes, jenisRes]) => {
+        const fields = jenisRes.data.data;
+        setJenisSurat(fields);
+        const current = suratRes.data.data.data_tambahan ?? {};
+        const init: Record<string, string> = {};
+        fields.fields_tambahan.forEach((f) => {
+          init[f.key] = String(current[f.key] ?? "");
+        });
+        setDataTambahan(init);
+      })
+      .catch(() => { toast.error("Gagal memuat data surat."); onClose(); })
+      .finally(() => setIsLoading(false));
+  }, [open, item]);
+
+  if (!item || !open) return null;
+
+  const set = (key: string, value: string) =>
+    setDataTambahan((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async () => {
+    if (!jenisSurat || !item.surat_id) return;
+    const missing = jenisSurat.fields_tambahan
+      .filter((f) => f.required && !dataTambahan[f.key]?.trim())
+      .map((f) => f.label);
+    if (missing.length) { toast.error(`Isi field berikut: ${missing.join(", ")}`); return; }
+
+    setIsSaving(true);
+    try {
+      const cleaned = { ...dataTambahan };
+      jenisSurat.fields_tambahan.forEach((f) => {
+        if (f.type === "number" && cleaned[f.key])
+          cleaned[f.key] = cleaned[f.key].replace(/\D/g, "");
+      });
+      await suratApi.update(item.surat_id, { data_tambahan: cleaned });
+      toast.success("Data surat berhasil diperbarui.");
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Gagal memperbarui surat.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-card rounded-xl border shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 space-y-5">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-lg">Edit Isi Surat</h2>
+              <p className="text-sm font-mono text-muted-foreground mt-0.5">{item.nomor_surat}</p>
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none mt-1">×</button>
+          </div>
+
+          {/* Info read-only */}
+          <div className="rounded-lg bg-muted/40 px-4 py-3 text-sm grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <div>
+              <p className="text-xs text-muted-foreground">Pemohon</p>
+              <p className="font-medium">{item.nama_pemohon}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Jenis Surat</p>
+              <p className="font-medium">{item.jenis_pelayanan}</p>
+            </div>
+          </div>
+
+          {/* Fields */}
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : jenisSurat?.fields_tambahan.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Jenis surat ini tidak memiliki field isi yang bisa diedit.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {jenisSurat?.fields_tambahan.map((field) => (
+                <div key={field.key}>
+                  <Label htmlFor={`edit-${field.key}`}>
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </Label>
+                  {field.type === "select" ? (
+                    <Select value={dataTambahan[field.key] ?? ""} onValueChange={(v) => set(field.key, v)}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder={`Pilih ${field.label}`} /></SelectTrigger>
+                      <SelectContent>
+                        {(field.options || PADUKUHAN_LIST).map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === "date" ? (
+                    <Input id={`edit-${field.key}`} type="date" className="mt-1"
+                      value={dataTambahan[field.key] ?? ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      required={field.required} />
+                  ) : field.type === "number" ? (
+                    <Input id={`edit-${field.key}`} type="text" inputMode="numeric" className="mt-1"
+                      value={dataTambahan[field.key] ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, "");
+                        set(field.key, raw ? new Intl.NumberFormat("id-ID").format(Number(raw)) : "");
+                      }}
+                      required={field.required} />
+                  ) : field.type === "textarea" ? (
+                    <Textarea id={`edit-${field.key}`} className="mt-1" rows={3}
+                      value={dataTambahan[field.key] ?? ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      required={field.required} />
+                  ) : (
+                    <Input id={`edit-${field.key}`} type="text" className="mt-1"
+                      placeholder={field.placeholder}
+                      value={dataTambahan[field.key] ?? ""}
+                      onChange={(e) => set(field.key, e.target.value)}
+                      required={field.required} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" onClick={onClose} disabled={isSaving}>Batal</Button>
+            <Button onClick={handleSubmit} disabled={isSaving || isLoading || !jenisSurat}>
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Simpan Perubahan
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Halaman utama ─────────────────────────────────────────────────────────────
 const ArsipData = () => {
   const { user } = useAuth();
@@ -355,8 +519,9 @@ const ArsipData = () => {
 
   const { data, meta, isLoading, isError, errorMessage, filters, setFilters, refresh, updateItem, removeItem } = useRegisterList();
 
-  const [selected, setSelected]   = useState<RegisterItem | null>(null);
-  const [editTarget, setEditTarget] = useState<RegisterItem | null>(null);
+  const [selected, setSelected]         = useState<RegisterItem | null>(null);
+  const [editTarget, setEditTarget]     = useState<RegisterItem | null>(null);
+  const [editSuratTarget, setEditSuratTarget] = useState<RegisterItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RegisterItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -531,6 +696,16 @@ const ArsipData = () => {
                                   <Eye className="w-4 h-4 mr-1.5" />
                                   Lihat
                                 </Button>
+                                {item.surat_id && (
+                                  <Button
+                                    variant="ghost" size="sm"
+                                    className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                                    onClick={() => setEditSuratTarget(item)}
+                                    title="Edit Isi Surat"
+                                  >
+                                    <FilePen className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 {isAdmin && (
                                   <>
                                     <Button
@@ -643,6 +818,14 @@ const ArsipData = () => {
           }}
         />
       )}
+
+      {/* Edit Surat modal */}
+      <EditSuratModal
+        item={editSuratTarget}
+        open={!!editSuratTarget}
+        onClose={() => setEditSuratTarget(null)}
+        onSaved={refresh}
+      />
 
       {/* Delete confirmation (admin only) */}
       {isAdmin && (
