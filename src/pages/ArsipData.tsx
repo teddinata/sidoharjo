@@ -23,8 +23,9 @@ import {
 import { toast } from "sonner";
 import {
   registerApi, suratApi, jenisSuratApi,
-  RegisterItem, RegisterListParams, RegisterUpdatePayload, JenisSuratDetail,
+  RegisterItem, RegisterListParams, RegisterUpdatePayload, JenisSuratDetail, Penandatangan,
 } from "@/lib/api";
+import { SignerDownloadButton } from "@/components/surat/SignerDownloadButton";
 import { PADUKUHAN_LIST } from "@/types/surat";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -117,11 +118,11 @@ function DetailModal({
   const [isDownloading, setIsDownloading] = useState<"pdf" | "docx" | null>(null);
   if (!item) return null;
 
-  const handleDownload = async (format: "pdf" | "docx") => {
+  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan) => {
     setIsDownloading(format);
     try {
-      if (format === "pdf") await suratApi.downloadPdf(item.id);
-      else await suratApi.downloadDocx(item.id);
+      if (format === "pdf") await suratApi.downloadPdf(item.id, undefined, penandatangan);
+      else await suratApi.downloadDocx(item.id, undefined, penandatangan);
       toast.success(`${format.toUpperCase()} berhasil diunduh.`);
     } catch {
       toast.error(`Gagal mengunduh ${format.toUpperCase()}. Pastikan surat sudah berstatus terbit.`);
@@ -182,14 +183,23 @@ function DetailModal({
 
           <div className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" size="sm" onClick={onClose}>Tutup</Button>
-            <Button variant="outline" size="sm" onClick={() => handleDownload("docx")} disabled={!!isDownloading}>
-              {isDownloading === "docx" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
-              DOCX
-            </Button>
-            <Button size="sm" onClick={() => handleDownload("pdf")} disabled={!!isDownloading}>
-              {isDownloading === "pdf" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
-              PDF
-            </Button>
+            <SignerDownloadButton
+              variant="outline"
+              size="sm"
+              onSelect={(p) => handleDownload("docx", p)}
+              isLoading={isDownloading === "docx"}
+              disabled={!!isDownloading}
+              label="DOCX"
+              icon={<FileText className="w-4 h-4 mr-1" />}
+            />
+            <SignerDownloadButton
+              size="sm"
+              onSelect={(p) => handleDownload("pdf", p)}
+              isLoading={isDownloading === "pdf"}
+              disabled={!!isDownloading}
+              label="PDF"
+              icon={<Download className="w-4 h-4 mr-1" />}
+            />
           </div>
         </div>
       </div>

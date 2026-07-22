@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLookupNik } from "@/hooks/useLookupNik";
-import { suratApi, jenisSuratApi, PendudukDetail, JenisSuratDetail } from "@/lib/api";
+import { suratApi, jenisSuratApi, PendudukDetail, JenisSuratDetail, Penandatangan } from "@/lib/api";
+import { SignerDownloadButton } from "@/components/surat/SignerDownloadButton";
 import { PADUKUHAN_LIST } from "@/types/surat";
 
 // ── Komponen utama ─────────────────────────────────────────────────────────────
@@ -123,20 +124,20 @@ const BuatSurat = () => {
   };
 
   // ── Download ───────────────────────────────────────────────────────────────
-  const handleDownload = async (format: "pdf" | "docx") => {
+  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan) => {
     if (!savedSurat) return;
     setIsDownloading(format);
     try {
       const safeSuratName = jenisSurat?.nama.replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_") || "Surat";
       const safePendudukName = penduduk?.nama_lengkap.replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_") || "Penduduk";
-      
+
       const today = new Date();
       const dateStr = `${String(today.getDate()).padStart(2, '0')}_${String(today.getMonth() + 1).padStart(2, '0')}_${today.getFullYear()}`;
-      
+
       const customFilename = `${safeSuratName}_${safePendudukName}_${dateStr}.${format}`;
-      
-      if (format === "pdf") await suratApi.downloadPdf(savedSurat.id, customFilename);
-      else await suratApi.downloadDocx(savedSurat.id, customFilename);
+
+      if (format === "pdf") await suratApi.downloadPdf(savedSurat.id, customFilename, penandatangan);
+      else await suratApi.downloadDocx(savedSurat.id, customFilename, penandatangan);
       toast.success(`${format.toUpperCase()} berhasil diunduh.`);
     } catch {
       toast.error(`Gagal mengunduh ${format.toUpperCase()}.`);
@@ -212,14 +213,23 @@ const BuatSurat = () => {
             <div className="flex flex-wrap gap-2 shrink-0">
               {savedSurat.status === "terbit" && (
                 <>
-                  <Button size="sm" onClick={() => handleDownload("pdf")} disabled={!!isDownloading}>
-                    {isDownloading === "pdf" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                    PDF
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleDownload("docx")} disabled={!!isDownloading}>
-                    {isDownloading === "docx" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
-                    DOCX
-                  </Button>
+                  <SignerDownloadButton
+                    size="sm"
+                    onSelect={(p) => handleDownload("pdf", p)}
+                    isLoading={isDownloading === "pdf"}
+                    disabled={!!isDownloading}
+                    label="PDF"
+                    icon={<Download className="w-4 h-4 mr-2" />}
+                  />
+                  <SignerDownloadButton
+                    size="sm"
+                    variant="outline"
+                    onSelect={(p) => handleDownload("docx", p)}
+                    isLoading={isDownloading === "docx"}
+                    disabled={!!isDownloading}
+                    label="DOCX"
+                    icon={<FileText className="w-4 h-4 mr-2" />}
+                  />
                 </>
               )}
               <Button size="sm" variant="ghost" onClick={handleReset}>

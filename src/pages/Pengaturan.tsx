@@ -22,6 +22,7 @@ export default function Pengaturan() {
   const [form, setForm] = useState<KalurahanSettings>({
     nama_kelurahan: "", nama_kapanewon: "", nama_kabupaten: "",
     nama_provinsi: "", nama_lengkap: "", nama_lurah: "", nip_lurah: "",
+    nama_carik: "", nip_carik: "",
     alamat: "", kode_pos: "", telepon: "", email: "", website: "",
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -34,8 +35,13 @@ export default function Pengaturan() {
   const [isUploadingTtd, setIsUploadingTtd] = useState(false);
   const [isDeletingTtd, setIsDeletingTtd] = useState(false);
 
+  const [ttdCarikPreview, setTtdCarikPreview] = useState<string | null>(null);
+  const [isUploadingTtdCarik, setIsUploadingTtdCarik] = useState(false);
+  const [isDeletingTtdCarik, setIsDeletingTtdCarik] = useState(false);
+
   const logoRef = useRef<HTMLInputElement>(null);
   const ttdRef = useRef<HTMLInputElement>(null);
+  const ttdCarikRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     settingsApi.get().then(({ data }) => {
@@ -43,6 +49,7 @@ export default function Pengaturan() {
       setForm(s);
       if (s.logo_path) setLogoPreview(`${API_BASE}/storage/${s.logo_path}`);
       if (s.ttd_lurah_path) setTtdPreview(`${API_BASE}/storage/${s.ttd_lurah_path}`);
+      if (s.ttd_carik_path) setTtdCarikPreview(`${API_BASE}/storage/${s.ttd_carik_path}`);
     }).catch(() => {
       toast.error("Gagal memuat pengaturan.");
     }).finally(() => setIsLoading(false));
@@ -100,6 +107,33 @@ export default function Pengaturan() {
       toast.error("Gagal menghapus tanda tangan.");
     } finally {
       setIsDeletingTtd(false);
+    }
+  };
+
+  const handleUploadTtdCarik = async (file: File) => {
+    setIsUploadingTtdCarik(true);
+    try {
+      await uploadApi.ttdCarik(file);
+      setTtdCarikPreview(URL.createObjectURL(file));
+      toast.success("Tanda tangan Carik berhasil diunggah.");
+    } catch {
+      toast.error("Gagal mengunggah tanda tangan Carik.");
+    } finally {
+      setIsUploadingTtdCarik(false);
+    }
+  };
+
+  const handleDeleteTtdCarik = async () => {
+    if (!confirm("Yakin ingin menghapus tanda tangan Carik?")) return;
+    setIsDeletingTtdCarik(true);
+    try {
+      await uploadApi.deleteTtdCarik();
+      setTtdCarikPreview(null);
+      toast.success("Tanda tangan Carik berhasil dihapus.");
+    } catch {
+      toast.error("Gagal menghapus tanda tangan Carik.");
+    } finally {
+      setIsDeletingTtdCarik(false);
     }
   };
 
@@ -176,9 +210,9 @@ export default function Pengaturan() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <User className="w-5 h-5 text-primary" />
-              Data Lurah / Kepala Desa
+              Data Penandatangan Surat
             </CardTitle>
-            <CardDescription>Informasi penandatangan surat resmi</CardDescription>
+            <CardDescription>Data Lurah dan Carik — dipilih saat mencetak/mengunduh surat</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Nama Lurah" id="nama_lurah">
@@ -186,6 +220,15 @@ export default function Pengaturan() {
             </FormField>
             <FormField label="NIP Lurah" id="nip_lurah">
               <Input id="nip_lurah" value={form.nip_lurah ?? ""} onChange={(e) => setField("nip_lurah", e.target.value)} disabled={!isAdmin} placeholder="19XXXXXXXXXXXXXX" />
+            </FormField>
+            <div className="sm:col-span-2">
+              <Separator />
+            </div>
+            <FormField label="Nama Carik" id="nama_carik">
+              <Input id="nama_carik" value={form.nama_carik ?? ""} onChange={(e) => setField("nama_carik", e.target.value)} disabled={!isAdmin} />
+            </FormField>
+            <FormField label="NIP Carik" id="nip_carik">
+              <Input id="nip_carik" value={form.nip_carik ?? ""} onChange={(e) => setField("nip_carik", e.target.value)} disabled={!isAdmin} placeholder="19XXXXXXXXXXXXXX" />
             </FormField>
           </CardContent>
         </Card>
@@ -293,6 +336,46 @@ export default function Pengaturan() {
                     {ttdPreview && (
                       <Button variant="outline" size="sm" onClick={handleDeleteTtd} disabled={isDeletingTtd} className="gap-2 text-destructive hover:text-destructive border-destructive/30">
                         {isDeletingTtd ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        Hapus
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* TTD Carik */}
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-48 h-28 rounded-xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30">
+                    {ttdCarikPreview ? (
+                      <img src={ttdCarikPreview} alt="Tanda Tangan Carik" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <FileSignature className="w-10 h-10 text-muted-foreground/40" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="font-medium text-sm">Tanda Tangan Digital Carik</p>
+                  <p className="text-xs text-muted-foreground">
+                    Format PNG dengan latar transparan. Dipakai saat Carik dipilih sebagai penandatangan ketika mencetak/mengunduh surat.
+                  </p>
+                  <input
+                    ref={ttdCarikRef}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadTtdCarik(f); }}
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => ttdCarikRef.current?.click()} disabled={isUploadingTtdCarik} className="gap-2">
+                      {isUploadingTtdCarik ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      {ttdCarikPreview ? "Ganti TTD" : "Upload TTD"}
+                    </Button>
+                    {ttdCarikPreview && (
+                      <Button variant="outline" size="sm" onClick={handleDeleteTtdCarik} disabled={isDeletingTtdCarik} className="gap-2 text-destructive hover:text-destructive border-destructive/30">
+                        {isDeletingTtdCarik ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         Hapus
                       </Button>
                     )}

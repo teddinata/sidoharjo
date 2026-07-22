@@ -7,12 +7,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, Loader2, FileText, User, MapPin, Calendar } from "lucide-react";
+import { Download, FileText, User, MapPin, Calendar } from "lucide-react";
 import { useState } from "react";
-import { suratApi } from "@/lib/api";
+import { suratApi, Penandatangan } from "@/lib/api";
 import { toast } from "sonner";
 import { SuratItem } from "@/hooks/useSuratList";
 import { useJenisSurat } from "@/hooks/useJenisSurat";
+import { SignerDownloadButton } from "@/components/surat/SignerDownloadButton";
 
 interface DetailSuratModalProps {
   surat: SuratItem | null;
@@ -51,10 +52,10 @@ export function DetailSuratModal({ surat, open, onClose }: DetailSuratModalProps
 
   const jenisInfo = jenisSuratList.find((j) => j.kode === surat.jenis_surat);
 
-  const handleDownload = async () => {
+  const handleDownload = async (penandatangan: Penandatangan) => {
     setIsDownloading(true);
     try {
-      await suratApi.downloadPdf(surat.id);
+      await suratApi.downloadPdf(surat.id, undefined, penandatangan);
       toast.success("PDF berhasil diunduh.");
     } catch {
       toast.error("Gagal mengunduh PDF. Silakan coba lagi.");
@@ -190,14 +191,12 @@ export function DetailSuratModal({ surat, open, onClose }: DetailSuratModalProps
               Tutup
             </Button>
             {surat.status === "selesai" && (
-              <Button onClick={handleDownload} disabled={isDownloading}>
-                {isDownloading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Download className="w-4 h-4 mr-2" />
-                )}
-                Download PDF
-              </Button>
+              <SignerDownloadButton
+                onSelect={handleDownload}
+                isLoading={isDownloading}
+                label="Download PDF"
+                icon={<Download className="w-4 h-4 mr-2" />}
+              />
             )}
           </div>
 

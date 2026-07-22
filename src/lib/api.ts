@@ -125,11 +125,11 @@ export const suratApi = {
   update: (id: number | string, payload: { data_tambahan?: Record<string, string | number | boolean>; data_pihak_luar?: Record<string, string | number | boolean> }) =>
     api.put<{ message: string; data_tambahan: Record<string, unknown> }>(`/surat/${id}`, payload),
 
-  downloadPdf: (id: number | string, customFilename?: string) =>
-    downloadFile(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`),
+  downloadPdf: (id: number | string, customFilename?: string, penandatangan?: Penandatangan) =>
+    downloadFile(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`, penandatangan ? { penandatangan } : undefined),
 
-  downloadDocx: (id: number | string, customFilename?: string) =>
-    downloadFile(`/surat/${id}/docx`, customFilename || `surat-${id}.docx`),
+  downloadDocx: (id: number | string, customFilename?: string, penandatangan?: Penandatangan) =>
+    downloadFile(`/surat/${id}/docx`, customFilename || `surat-${id}.docx`, penandatangan ? { penandatangan } : undefined),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -182,7 +182,18 @@ export const uploadApi = {
     });
   },
   deleteTtdLurah: () => api.delete("/upload/ttd-lurah"),
+  ttdCarik: (file: File) => {
+    const form = new FormData();
+    form.append("ttd", file);
+    return api.post("/upload/ttd-carik", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  deleteTtdCarik: () => api.delete("/upload/ttd-carik"),
 };
+
+/** Pilihan penandatangan surat saat cetak/download. Default (tidak dikirim) = Lurah. */
+export type Penandatangan = "lurah" | "carik";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // USER MANAGEMENT (admin only)
@@ -216,8 +227,8 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
   window.URL.revokeObjectURL(url);
 }
 
-async function downloadFile(endpoint: string, filename: string): Promise<void> {
-  const res = await api.get(endpoint, { responseType: "blob" });
+async function downloadFile(endpoint: string, filename: string, params?: Record<string, string>): Promise<void> {
+  const res = await api.get(endpoint, { responseType: "blob", params });
   triggerBlobDownload(res.data, filename);
 }
 
@@ -337,6 +348,8 @@ export interface KalurahanSettings {
   nama_lengkap: string;
   nama_lurah: string;
   nip_lurah: string;
+  nama_carik?: string;
+  nip_carik?: string;
   alamat: string;
   kode_pos: string;
   telepon?: string;
@@ -344,6 +357,7 @@ export interface KalurahanSettings {
   website?: string;
   logo_path?: string;
   ttd_lurah_path?: string;
+  ttd_carik_path?: string;
 }
 
 /**
