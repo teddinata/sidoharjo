@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Pencil,
+  MonitorSmartphone,
 } from "lucide-react";
 import {
   Collapsible,
@@ -26,6 +27,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { APP_VERSION, APP_NAME } from "@/lib/version";
+import { ActiveSessionsModal } from "@/components/layout/ActiveSessionsModal";
 
 interface SidebarProps {
   className?: string;
@@ -68,6 +70,7 @@ export function AppSidebar({ className }: SidebarProps) {
   const [openMenus, setOpenMenus] = useState<string[]>(["Buat Surat"]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
 
   // Close mobile menu on navigation
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
@@ -179,6 +182,10 @@ export function AppSidebar({ className }: SidebarProps) {
             <p className="text-sm font-medium truncate">{user?.name || "Operator"}</p>
             <p className="text-xs text-sidebar-foreground/70">{isAdmin ? "Administrator" : "Petugas"}</p>
           </div>
+          <button onClick={() => setSessionsModalOpen(true)} title="Sesi Login Aktif"
+            className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors">
+            <MonitorSmartphone className="w-4 h-4" />
+          </button>
           <button onClick={handleLogout} disabled={isLoggingOut} title="Keluar"
             className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors disabled:opacity-50">
             {isLoggingOut
@@ -274,6 +281,11 @@ export function AppSidebar({ className }: SidebarProps) {
 
           {/* Logout */}
           <div className="px-4 py-4 border-t border-border space-y-2">
+            <button onClick={() => { setMobileMenuOpen(false); setSessionsModalOpen(true); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-muted transition-colors">
+              <MonitorSmartphone className="w-5 h-5" />
+              Sesi Login Aktif
+            </button>
             <button onClick={handleLogout} disabled={isLoggingOut}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50">
               {isLoggingOut
@@ -354,6 +366,7 @@ export function AppSidebar({ className }: SidebarProps) {
     <>
       {DesktopSidebar}
       {MobileBottomNav}
+      <ActiveSessionsModal open={sessionsModalOpen} onClose={() => setSessionsModalOpen(false)} />
     </>
   );
 }

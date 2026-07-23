@@ -44,7 +44,20 @@ export const authApi = {
     api.post<{ message: string; token: string; user: AuthUser }>("/auth/login", credentials),
   logout: () => api.post("/auth/logout"),
   me: () => api.get<{ user: AuthUser }>("/auth/me"),
+  /** Daftar sesi login aktif milik user saat ini (maks. 2 sesi bersamaan). */
+  sessions: () => api.get<{ data: SessionItem[] }>("/auth/sessions"),
+  /** Cabut satu sesi login tertentu (misal karena mencurigakan). */
+  revokeSession: (id: number) => api.delete<{ message: string }>(`/auth/sessions/${id}`),
 };
+
+export interface SessionItem {
+  id: number;
+  device: string;
+  ip_address: string | null;
+  last_used_at: string | null;
+  created_at: string;
+  is_current: boolean;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PENDUDUK
