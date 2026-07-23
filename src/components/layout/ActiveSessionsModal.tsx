@@ -65,7 +65,7 @@ export function ActiveSessionsModal({ open, onClose }: ActiveSessionsModalProps)
         <DialogHeader>
           <DialogTitle>Sesi Login Aktif</DialogTitle>
           <DialogDescription>
-            Maksimal 2 sesi aktif bersamaan. Cabut sesi yang mencurigakan atau tidak Anda kenali.
+            Maksimal 3 sesi aktif bersamaan. Cabut sesi yang mencurigakan atau tidak Anda kenali.
           </DialogDescription>
         </DialogHeader>
 

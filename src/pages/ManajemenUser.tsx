@@ -22,11 +22,6 @@ import { userApi, UserItem, UserPayload } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-function formatDate(str: string | null) {
-  if (!str) return "-";
-  return new Date(str).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
 const emptyForm: UserPayload = { name: "", email: "", role: "petugas", password: "", password_confirmation: "" };
 
 export default function ManajemenUser() {
@@ -209,7 +204,7 @@ export default function ManajemenUser() {
                         {u.role === "admin" ? "Admin" : "Petugas"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{formatDate(u.last_login_at)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{u.last_login_at || "-"}</TableCell>
                     <TableCell>
                       <Badge variant={u.is_active ? "default" : "secondary"}
                         className={u.is_active ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" : ""}>
