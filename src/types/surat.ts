@@ -70,7 +70,8 @@ export const AGAMA_LIST = [
   "Katolik",
   "Hindu",
   "Buddha",
-  "Konghucu"
+  "Konghucu",
+  "Aliran Kepercayaan"
 ];
 
 export const PEKERJAAN_LIST = [
@@ -79,6 +80,7 @@ export const PEKERJAAN_LIST = [
   "Pedagang",
   "Wiraswasta",
   "PNS",
+  "Perangkat Desa",
   "Karyawan Swasta",
   "Ibu Rumah Tangga",
   "Pelajar/Mahasiswa",
