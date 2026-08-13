@@ -118,11 +118,11 @@ function DetailModal({
   const [isDownloading, setIsDownloading] = useState<"pdf" | "docx" | null>(null);
   if (!item) return null;
 
-  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan) => {
+  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan, namaManual?: string) => {
     setIsDownloading(format);
     try {
-      if (format === "pdf") await suratApi.downloadPdf(item.id, undefined, penandatangan);
-      else await suratApi.downloadDocx(item.id, undefined, penandatangan);
+      if (format === "pdf") await suratApi.downloadPdf(item.id, undefined, penandatangan, namaManual);
+      else await suratApi.downloadDocx(item.id, undefined, penandatangan, namaManual);
       toast.success(`${format.toUpperCase()} berhasil diunduh.`);
     } catch {
       toast.error(`Gagal mengunduh ${format.toUpperCase()}. Pastikan surat sudah berstatus terbit.`);
@@ -186,7 +186,7 @@ function DetailModal({
             <SignerDownloadButton
               variant="outline"
               size="sm"
-              onSelect={(p) => handleDownload("docx", p)}
+              onSelect={(p, n) => handleDownload("docx", p, n)}
               isLoading={isDownloading === "docx"}
               disabled={!!isDownloading}
               label="DOCX"
@@ -194,7 +194,7 @@ function DetailModal({
             />
             <SignerDownloadButton
               size="sm"
-              onSelect={(p) => handleDownload("pdf", p)}
+              onSelect={(p, n) => handleDownload("pdf", p, n)}
               isLoading={isDownloading === "pdf"}
               disabled={!!isDownloading}
               label="PDF"

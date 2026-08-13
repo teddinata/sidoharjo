@@ -138,12 +138,19 @@ export const suratApi = {
   update: (id: number | string, payload: { data_tambahan?: Record<string, string | number | boolean>; data_pihak_luar?: Record<string, string | number | boolean> }) =>
     api.put<{ message: string; data_tambahan: Record<string, unknown> }>(`/surat/${id}`, payload),
 
-  downloadPdf: (id: number | string, customFilename?: string, penandatangan?: Penandatangan) =>
-    downloadFile(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`, penandatangan ? { penandatangan } : undefined),
+  downloadPdf: (id: number | string, customFilename?: string, penandatangan?: Penandatangan, namaManual?: string) =>
+    downloadFile(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`, buildPenandatanganParams(penandatangan, namaManual)),
 
-  downloadDocx: (id: number | string, customFilename?: string, penandatangan?: Penandatangan) =>
-    downloadFile(`/surat/${id}/docx`, customFilename || `surat-${id}.docx`, penandatangan ? { penandatangan } : undefined),
+  downloadDocx: (id: number | string, customFilename?: string, penandatangan?: Penandatangan, namaManual?: string) =>
+    downloadFile(`/surat/${id}/docx`, customFilename || `surat-${id}.docx`, buildPenandatanganParams(penandatangan, namaManual)),
 };
+
+function buildPenandatanganParams(penandatangan?: Penandatangan, namaManual?: string): Record<string, string> | undefined {
+  if (!penandatangan) return undefined;
+  const params: Record<string, string> = { penandatangan };
+  if (namaManual) params.nama_manual = namaManual;
+  return params;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTER PELAYANAN
@@ -206,7 +213,7 @@ export const uploadApi = {
 };
 
 /** Pilihan penandatangan surat saat cetak/download. Default (tidak dikirim) = Lurah. */
-export type Penandatangan = "lurah" | "carik";
+export type Penandatangan = "lurah" | "carik" | "an_lurah";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // USER MANAGEMENT (admin only)

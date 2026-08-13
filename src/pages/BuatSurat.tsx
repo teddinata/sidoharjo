@@ -124,7 +124,7 @@ const BuatSurat = () => {
   };
 
   // ── Download ───────────────────────────────────────────────────────────────
-  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan) => {
+  const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan, namaManual?: string) => {
     if (!savedSurat) return;
     setIsDownloading(format);
     try {
@@ -136,8 +136,8 @@ const BuatSurat = () => {
 
       const customFilename = `${safeSuratName}_${safePendudukName}_${dateStr}.${format}`;
 
-      if (format === "pdf") await suratApi.downloadPdf(savedSurat.id, customFilename, penandatangan);
-      else await suratApi.downloadDocx(savedSurat.id, customFilename, penandatangan);
+      if (format === "pdf") await suratApi.downloadPdf(savedSurat.id, customFilename, penandatangan, namaManual);
+      else await suratApi.downloadDocx(savedSurat.id, customFilename, penandatangan, namaManual);
       toast.success(`${format.toUpperCase()} berhasil diunduh.`);
     } catch {
       toast.error(`Gagal mengunduh ${format.toUpperCase()}.`);
@@ -215,7 +215,7 @@ const BuatSurat = () => {
                 <>
                   <SignerDownloadButton
                     size="sm"
-                    onSelect={(p) => handleDownload("pdf", p)}
+                    onSelect={(p, n) => handleDownload("pdf", p, n)}
                     isLoading={isDownloading === "pdf"}
                     disabled={!!isDownloading}
                     label="PDF"
@@ -224,7 +224,7 @@ const BuatSurat = () => {
                   <SignerDownloadButton
                     size="sm"
                     variant="outline"
-                    onSelect={(p) => handleDownload("docx", p)}
+                    onSelect={(p, n) => handleDownload("docx", p, n)}
                     isLoading={isDownloading === "docx"}
                     disabled={!!isDownloading}
                     label="DOCX"

@@ -52,10 +52,10 @@ export function DetailSuratModal({ surat, open, onClose }: DetailSuratModalProps
 
   const jenisInfo = jenisSuratList.find((j) => j.kode === surat.jenis_surat);
 
-  const handleDownload = async (penandatangan: Penandatangan) => {
+  const handleDownload = async (penandatangan: Penandatangan, namaManual?: string) => {
     setIsDownloading(true);
     try {
-      await suratApi.downloadPdf(surat.id, undefined, penandatangan);
+      await suratApi.downloadPdf(surat.id, undefined, penandatangan, namaManual);
       toast.success("PDF berhasil diunduh.");
     } catch {
       toast.error("Gagal mengunduh PDF. Silakan coba lagi.");
