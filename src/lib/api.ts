@@ -143,6 +143,10 @@ export const suratApi = {
 
   downloadDocx: (id: number | string, customFilename?: string, penandatangan?: Penandatangan, namaManual?: string) =>
     downloadFile(`/surat/${id}/docx`, customFilename || `surat-${id}.docx`, buildPenandatanganParams(penandatangan, namaManual)),
+
+  /** Ambil bytes PDF tanpa langsung trigger download — dipakai untuk preview di browser. */
+  fetchPdfBlob: (id: number | string, customFilename?: string, penandatangan?: Penandatangan, namaManual?: string) =>
+    fetchBlob(`/surat/${id}/pdf`, customFilename || `surat-${id}.pdf`, buildPenandatanganParams(penandatangan, namaManual)),
 };
 
 function buildPenandatanganParams(penandatangan?: Penandatangan, namaManual?: string): Record<string, string> | undefined {
@@ -236,7 +240,7 @@ export const userApi = {
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
-function triggerBlobDownload(blob: Blob, filename: string): void {
+export function triggerBlobDownload(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -250,6 +254,11 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
 async function downloadFile(endpoint: string, filename: string, params?: Record<string, string>): Promise<void> {
   const res = await api.get(endpoint, { responseType: "blob", params });
   triggerBlobDownload(res.data, filename);
+}
+
+async function fetchBlob(endpoint: string, filename: string, params?: Record<string, string>): Promise<{ blob: Blob; filename: string }> {
+  const res = await api.get(endpoint, { responseType: "blob", params });
+  return { blob: res.data, filename };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -193,6 +193,7 @@ export function DetailSuratModal({ surat, open, onClose }: DetailSuratModalProps
             {surat.status === "selesai" && (
               <SignerDownloadButton
                 onSelect={handleDownload}
+                onFetchBlob={(p, n) => suratApi.fetchPdfBlob(surat.id, undefined, p, n)}
                 isLoading={isDownloading}
                 label="Download PDF"
                 icon={<Download className="w-4 h-4 mr-2" />}

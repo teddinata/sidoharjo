@@ -216,6 +216,7 @@ const BuatSurat = () => {
                   <SignerDownloadButton
                     size="sm"
                     onSelect={(p, n) => handleDownload("pdf", p, n)}
+                    onFetchBlob={(p, n) => suratApi.fetchPdfBlob(savedSurat.id, undefined, p, n)}
                     isLoading={isDownloading === "pdf"}
                     disabled={!!isDownloading}
                     label="PDF"
