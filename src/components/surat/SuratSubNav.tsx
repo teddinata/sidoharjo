@@ -6,7 +6,7 @@ const suratTabs = [
   { label: "Kependudukan", icon: Home, href: "/surat/kependudukan" },
   { label: "Usaha & Ekonomi", icon: Store, href: "/surat/usaha" },
   { label: "Lainnya", icon: Shield, href: "/surat/lainnya" },
-  { label: "Undangan & Perkantoran", icon: Briefcase, href: "/surat/perkantoran" },
+  { label: "Undangan & Perkantoran", icon: Briefcase, href: "/surat/buat/CUSTOM" },
 ];
 
 /**
