@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronRight, FileText, Download, Save, Search,
   CheckCircle2, XCircle, Loader2, AlertCircle, ArrowLeft,
@@ -76,6 +77,22 @@ const BuatSurat = () => {
       setDataTambahan(init);
     }
   };
+
+  // Field dikelompokkan per "section" supaya form panjang (paket surat nikah punya
+  // puluhan field) tetap terbaca. Field tanpa section jatuh ke satu kelompok tanpa judul,
+  // jadi jenis surat lain tampil sama seperti sebelumnya.
+  const kelompokField = useMemo(() => {
+    const grup: { section: string; fields: NonNullable<typeof jenisSurat>["fields_tambahan"] }[] = [];
+
+    jenisSurat?.fields_tambahan.forEach((f) => {
+      const section = f.section ?? "";
+      const ada = grup.find((g) => g.section === section);
+      if (ada) ada.fields.push(f);
+      else grup.push({ section, fields: [f] });
+    });
+
+    return grup;
+  }, [jenisSurat]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -362,7 +379,29 @@ const BuatSurat = () => {
                       Jenis surat ini tidak memerlukan keterangan tambahan.
                     </p>
                   ) : (
-                    jenisSurat.fields_tambahan.map((field) => (
+                    kelompokField.map((grup) => (
+                      <div key={grup.section || "_"} className="space-y-4">
+                        {grup.section && (
+                          <p className="text-sm font-semibold border-b border-border pb-1 pt-2">
+                            {grup.section}
+                          </p>
+                        )}
+                        {grup.fields.map((field) => (
+                      field.type === "checkbox" ? (
+                        <label
+                          key={field.key}
+                          className="flex items-center gap-2 cursor-pointer select-none"
+                        >
+                          <Checkbox
+                            id={field.key}
+                            checked={dataTambahan[field.key] === "1"}
+                            onCheckedChange={(v) =>
+                              setDataTambahan((prev) => ({ ...prev, [field.key]: v ? "1" : "" }))
+                            }
+                          />
+                          <span className="text-sm">{field.label}</span>
+                        </label>
+                      ) : (
                       <div key={field.key}>
                         <Label htmlFor={field.key}>
                           {field.label} {field.required && "*"}
@@ -421,6 +460,9 @@ const BuatSurat = () => {
                             required={field.required}
                           />
                         )}
+                      </div>
+                      )
+                        ))}
                       </div>
                     ))
                   )}

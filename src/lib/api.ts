@@ -365,6 +365,8 @@ export interface JenisSuratDetail extends JenisSuratItem {
     required: boolean;
     options?: string[];
     placeholder?: string;
+    /** Judul kelompok field; dipakai memisahkan form panjang jadi beberapa bagian. */
+    section?: string;
   }>;
   template_blade: string;
 }
