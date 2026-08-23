@@ -20,6 +20,17 @@ import { suratApi, jenisSuratApi, PendudukDetail, JenisSuratDetail, Penandatanga
 import { SignerDownloadButton } from "@/components/surat/SignerDownloadButton";
 import { PADUKUHAN_LIST } from "@/types/surat";
 
+/**
+ * Nilai awal tiap field. Sebagian field punya "default" dari backend — mis. pada paket
+ * surat nikah, centang Surat Pernyataan Belum Menikah menyala untuk calon suami dan
+ * centang Keterangan Wali Nikah menyala untuk calon istri — dan petugas tetap bisa
+ * mengubahnya.
+ */
+const nilaiAwalField = (
+  fields: JenisSuratDetail["fields_tambahan"],
+): Record<string, string> =>
+  Object.fromEntries(fields.map((f) => [f.key, f.default ?? ""]));
+
 // ── Komponen utama ─────────────────────────────────────────────────────────────
 const BuatSurat = () => {
   const { jenis: kode } = useParams<{ jenis: string }>();
@@ -55,9 +66,7 @@ const BuatSurat = () => {
   // Init data_tambahan saat jenis surat selesai di-load
   useEffect(() => {
     if (jenisSurat?.fields_tambahan) {
-      const init: Record<string, string> = {};
-      jenisSurat.fields_tambahan.forEach((f) => { init[f.key] = ""; });
-      setDataTambahan(init);
+      setDataTambahan(nilaiAwalField(jenisSurat.fields_tambahan));
     }
   }, [jenisSurat]);
 
@@ -72,9 +81,7 @@ const BuatSurat = () => {
     setSavedSurat(null);
     setDataTambahan({});
     if (jenisSurat?.fields_tambahan) {
-      const init: Record<string, string> = {};
-      jenisSurat.fields_tambahan.forEach((f) => { init[f.key] = ""; });
-      setDataTambahan(init);
+      setDataTambahan(nilaiAwalField(jenisSurat.fields_tambahan));
     }
   };
 

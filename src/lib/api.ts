@@ -367,6 +367,8 @@ export interface JenisSuratDetail extends JenisSuratItem {
     placeholder?: string;
     /** Judul kelompok field; dipakai memisahkan form panjang jadi beberapa bagian. */
     section?: string;
+    /** Nilai awal field, mis. centang yang menyala secara bawaan. */
+    default?: string;
   }>;
   template_blade: string;
 }
