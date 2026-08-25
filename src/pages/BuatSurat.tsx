@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useLookupNik } from "@/hooks/useLookupNik";
 import { suratApi, jenisSuratApi, PendudukDetail, JenisSuratDetail, Penandatangan } from "@/lib/api";
 import { SignerDownloadButton } from "@/components/surat/SignerDownloadButton";
+import { PilihAnggotaKeluarga } from "@/components/surat/PilihAnggotaKeluarga";
 import { PADUKUHAN_LIST } from "@/types/surat";
 
 /**
@@ -394,7 +395,17 @@ const BuatSurat = () => {
                           </p>
                         )}
                         {grup.fields.map((field) => (
-                      field.type === "checkbox" ? (
+                      field.type === "keluarga" ? (
+                        <PilihAnggotaKeluarga
+                          key={field.key}
+                          nik={penduduk!.nik}
+                          label={field.label}
+                          value={dataTambahan[field.key] ?? ""}
+                          onChange={(v) =>
+                            setDataTambahan((prev) => ({ ...prev, [field.key]: v }))
+                          }
+                        />
+                      ) : field.type === "checkbox" ? (
                         <label
                           key={field.key}
                           className="flex items-center gap-2 cursor-pointer select-none"

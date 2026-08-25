@@ -75,6 +75,10 @@ export const pendudukApi = {
   getByNik: (nik: string) =>
     api.get<{ data: PendudukDetail }>(`/penduduk/${nik}`),
 
+  /** Anggota satu kartu keluarga — untuk memilih siapa yang ikut, mis. ikut pindah */
+  getKeluarga: (nik: string) =>
+    api.get<{ data: AnggotaKeluarga[] }>(`/penduduk/${nik}/keluarga`),
+
   /** List paginated untuk halaman manajemen data */
   list: (params?: PendudukListParams) =>
     api.get<{ data: PendudukDetail[]; meta: { total: number; per_page: number; current_page: number; last_page: number } }>(
@@ -288,6 +292,14 @@ export interface PendudukSearchItem {
   pekerjaan: string;
   status_perkawinan: string;
   hub_keluarga: string;
+}
+
+/** Anggota kartu keluarga GET /api/penduduk/{nik}/keluarga */
+export interface AnggotaKeluarga {
+  nik: string;
+  nama_lengkap: string;
+  hub_keluarga: string | null;
+  umur: number | null;
 }
 
 /** Detail lengkap GET /api/penduduk/{nik} */
