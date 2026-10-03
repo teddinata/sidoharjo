@@ -104,6 +104,37 @@ export const pendudukApi = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MASTER RT/RW
+// Nama Ketua RT & RW disimpan sekali per RT/RW, berlaku untuk semua warganya.
+// ─────────────────────────────────────────────────────────────────────────────
+export const rtRwApi = {
+  /** Semua RW beserta RT-nya */
+  list: () => api.get<{ data: MasterRw[] }>("/rt-rw"),
+
+  updateRw: (id: number, payload: { nama_ketua: string | null; pedukuhan?: string | null }) =>
+    api.put<{ message: string }>(`/rw/${id}`, payload),
+
+  updateRt: (id: number, payload: { nama_ketua: string | null }) =>
+    api.put<{ message: string }>(`/rt/${id}`, payload),
+};
+
+export interface MasterRt {
+  id: number;
+  nomor: string;
+  nama_ketua: string | null;
+  jumlah_warga: number;
+}
+
+export interface MasterRw {
+  id: number;
+  nomor: string;
+  pedukuhan: string | null;
+  nama_ketua: string | null;
+  jumlah_warga: number;
+  rt: MasterRt[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // JENIS SURAT
 // GET /api/jenis-surat        → { data: { [kategori]: JenisSuratItem[] } }
 // GET /api/jenis-surat/{kode} → { data: JenisSuratDetail }
@@ -323,8 +354,9 @@ export interface PendudukDetail {
   rt: string;
   rw: string;
   alamat_lengkap: string;
-  nama_ketua_rt: string;
-  nama_ketua_rw: string;
+  /** Dari master RT/RW, hanya-baca */
+  nama_ketua_rt: string | null;
+  nama_ketua_rw: string | null;
   nama_ayah: string;
   nama_ibu: string;
   is_aktif: boolean;
@@ -353,8 +385,6 @@ export interface PendudukPayload {
   pedukuhan: string;
   rt: string;
   rw: string;
-  nama_ketua_rt?: string;
-  nama_ketua_rw?: string;
   nama_ayah?: string;
   nama_ibu?: string;
 }

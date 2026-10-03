@@ -26,6 +26,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KetuaRtRw } from "@/components/penduduk/KetuaRtRw";
 import { toast } from "sonner";
 import {
   Search,
@@ -51,7 +53,7 @@ const emptyForm: PendudukPayload = {
   jenis_kelamin: "Laki-laki", agama: "Islam", pendidikan: "", pekerjaan: "",
   status_perkawinan: "Belum Kawin", hub_keluarga: "Kepala Keluarga",
   pedukuhan: "", rt: "", rw: "", no_kk: "",
-  nama_ketua_rt: "", nama_ketua_rw: "", nama_ayah: "", nama_ibu: "",
+  nama_ayah: "", nama_ibu: "",
 };
 
 export default function DataPenduduk() {
@@ -101,7 +103,6 @@ export default function DataPenduduk() {
       agama: p.agama, pendidikan: p.pendidikan ?? "", pekerjaan: p.pekerjaan,
       status_perkawinan: p.status_perkawinan as any, hub_keluarga: p.hub_keluarga,
       pedukuhan: p.pedukuhan, rt: p.rt, rw: p.rw, no_kk: p.no_kk ?? "",
-      nama_ketua_rt: p.nama_ketua_rt ?? "", nama_ketua_rw: p.nama_ketua_rw ?? "",
       nama_ayah: p.nama_ayah ?? "", nama_ibu: p.nama_ibu ?? "",
     });
     setFormOpen(true);
@@ -170,121 +171,134 @@ export default function DataPenduduk() {
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Cari NIK atau nama..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-9"
-            />
-          </div>
-          <Select value={pedukuhan} onValueChange={(v) => { setPedukuhan(v === "_all" ? "" : v); setPage(1); }}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Semua Pedukuhan" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">Semua Pedukuhan</SelectItem>
-              {PADUKUHAN_LIST.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={isAktif} onValueChange={(v) => { setIsAktif(v); setPage(1); }}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
-              <SelectItem value="aktif">Aktif</SelectItem>
-              <SelectItem value="nonaktif">Nonaktif</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Tabs defaultValue="penduduk" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="penduduk">Penduduk</TabsTrigger>
+            <TabsTrigger value="rt-rw">Ketua RT/RW</TabsTrigger>
+          </TabsList>
 
-        {/* Table */}
-        <div className="rounded-xl border border-border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="hidden sm:table-cell">NIK</TableHead>
-                <TableHead>Nama Lengkap</TableHead>
-                <TableHead className="hidden md:table-cell">Pedukuhan</TableHead>
-                <TableHead className="hidden lg:table-cell">RT/RW</TableHead>
-                <TableHead className="hidden lg:table-cell">Pekerjaan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                    Tidak ada data penduduk ditemukan.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="hidden sm:table-cell font-mono text-xs">{p.nik}</TableCell>
-                    <TableCell className="font-medium">
-                      <div>
-                        <p>{p.nama_lengkap}</p>
-                        <p className="text-xs text-muted-foreground sm:hidden">{p.pedukuhan}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{p.pedukuhan}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{p.rt}/{p.rw}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{p.pekerjaan}</TableCell>
-                    <TableCell>
-                      <Badge variant={p.is_aktif ? "default" : "secondary"}
-                        className={p.is_aktif ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" : ""}>
-                        {p.is_aktif ? "Aktif" : "Nonaktif"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailPenduduk(p)} title="Detail">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex" onClick={() => openEdit(p)} title="Edit">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex"
-                          onClick={() => toggleMutation.mutate(p.id)}
-                          disabled={toggleMutation.isPending}
-                          title={p.is_aktif ? "Nonaktifkan" : "Aktifkan"}>
-                          {p.is_aktif ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground" />}
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex text-destructive hover:text-destructive"
-                          onClick={() => setDeleteTarget(p)} title="Hapus">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+          <TabsContent value="rt-rw">
+            <KetuaRtRw />
+          </TabsContent>
 
-        {/* Pagination */}
-        {meta && meta.last_page > 1 && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Halaman {meta.current_page} dari {meta.last_page} ({meta.total} data)</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                <ChevronLeft className="w-4 h-4 mr-1" /> Sebelumnya
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                Berikutnya <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+          <TabsContent value="penduduk" className="space-y-6">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari NIK atau nama..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={pedukuhan} onValueChange={(v) => { setPedukuhan(v === "_all" ? "" : v); setPage(1); }}>
+                <SelectTrigger className="w-48"><SelectValue placeholder="Semua Pedukuhan" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Semua Pedukuhan</SelectItem>
+                  {PADUKUHAN_LIST.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={isAktif} onValueChange={(v) => { setIsAktif(v); setPage(1); }}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="aktif">Aktif</SelectItem>
+                  <SelectItem value="nonaktif">Nonaktif</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-        )}
+
+            {/* Table */}
+            <div className="rounded-xl border border-border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="hidden sm:table-cell">NIK</TableHead>
+                    <TableHead>Nama Lengkap</TableHead>
+                    <TableHead className="hidden md:table-cell">Pedukuhan</TableHead>
+                    <TableHead className="hidden lg:table-cell">RT/RW</TableHead>
+                    <TableHead className="hidden lg:table-cell">Pekerjaan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-12">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                      </TableCell>
+                    </TableRow>
+                  ) : rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                        Tidak ada data penduduk ditemukan.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    rows.map((p) => (
+                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="hidden sm:table-cell font-mono text-xs">{p.nik}</TableCell>
+                        <TableCell className="font-medium">
+                          <div>
+                            <p>{p.nama_lengkap}</p>
+                            <p className="text-xs text-muted-foreground sm:hidden">{p.pedukuhan}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{p.pedukuhan}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{p.rt}/{p.rw}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{p.pekerjaan}</TableCell>
+                        <TableCell>
+                          <Badge variant={p.is_aktif ? "default" : "secondary"}
+                            className={p.is_aktif ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" : ""}>
+                            {p.is_aktif ? "Aktif" : "Nonaktif"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailPenduduk(p)} title="Detail">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex" onClick={() => openEdit(p)} title="Edit">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex"
+                              onClick={() => toggleMutation.mutate(p.id)}
+                              disabled={toggleMutation.isPending}
+                              title={p.is_aktif ? "Nonaktifkan" : "Aktifkan"}>
+                              {p.is_aktif ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:inline-flex text-destructive hover:text-destructive"
+                              onClick={() => setDeleteTarget(p)} title="Hapus">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {meta && meta.last_page > 1 && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Halaman {meta.current_page} dari {meta.last_page} ({meta.total} data)</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Sebelumnya
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
+                    Berikutnya <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* ── Detail Modal ─────────────────────────────────────────────────── */}
@@ -411,12 +425,12 @@ export default function DataPenduduk() {
             <FormField label="RW *" id="rw">
               <Input id="rw" value={form.rw} onChange={(e) => setField("rw", e.target.value)} placeholder="01" maxLength={5} />
             </FormField>
-            <FormField label="Nama Ketua RT" id="rt_name">
-              <Input id="rt_name" value={form.nama_ketua_rt ?? ""} onChange={(e) => setField("nama_ketua_rt", e.target.value)} />
-            </FormField>
-            <FormField label="Nama Ketua RW" id="rw_name">
-              <Input id="rw_name" value={form.nama_ketua_rw ?? ""} onChange={(e) => setField("nama_ketua_rw", e.target.value)} />
-            </FormField>
+            <p className="col-span-2 text-xs text-muted-foreground -mt-2">
+              {editTarget && editTarget.rt === form.rt && editTarget.rw === form.rw
+                ? `Ketua RT: ${editTarget.nama_ketua_rt ?? "-"} · Ketua RW: ${editTarget.nama_ketua_rw ?? "-"}. `
+                : ""}
+              Nama ketua RT/RW mengikuti nomor RT/RW dan diubah di tab Ketua RT/RW.
+            </p>
             <FormField label="Nama Ayah" id="ayah">
               <Input id="ayah" value={form.nama_ayah ?? ""} onChange={(e) => setField("nama_ayah", e.target.value)} />
             </FormField>
