@@ -118,11 +118,15 @@ function DetailModal({
   const [isDownloading, setIsDownloading] = useState<"pdf" | "docx" | null>(null);
   if (!item) return null;
 
+  // item.id adalah ID register, bukan ID surat — unduhan harus memakai surat_id.
+  const suratId = item.surat_id;
+
   const handleDownload = async (format: "pdf" | "docx", penandatangan: Penandatangan, namaManual?: string) => {
+    if (!suratId) return;
     setIsDownloading(format);
     try {
-      if (format === "pdf") await suratApi.downloadPdf(item.id, undefined, penandatangan, namaManual);
-      else await suratApi.downloadDocx(item.id, undefined, penandatangan, namaManual);
+      if (format === "pdf") await suratApi.downloadPdf(suratId, undefined, penandatangan, namaManual);
+      else await suratApi.downloadDocx(suratId, undefined, penandatangan, namaManual);
       toast.success(`${format.toUpperCase()} berhasil diunduh.`);
     } catch {
       toast.error(`Gagal mengunduh ${format.toUpperCase()}. Pastikan surat sudah berstatus terbit.`);
@@ -183,24 +187,28 @@ function DetailModal({
 
           <div className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" size="sm" onClick={onClose}>Tutup</Button>
-            <SignerDownloadButton
-              variant="outline"
-              size="sm"
-              onSelect={(p, n) => handleDownload("docx", p, n)}
-              isLoading={isDownloading === "docx"}
-              disabled={!!isDownloading}
-              label="DOCX"
-              icon={<FileText className="w-4 h-4 mr-1" />}
-            />
-            <SignerDownloadButton
-              size="sm"
-              onSelect={(p, n) => handleDownload("pdf", p, n)}
-              onFetchBlob={(p, n) => suratApi.fetchPdfBlob(item.id, undefined, p, n)}
-              isLoading={isDownloading === "pdf"}
-              disabled={!!isDownloading}
-              label="PDF"
-              icon={<Download className="w-4 h-4 mr-1" />}
-            />
+            {suratId && (
+              <>
+                <SignerDownloadButton
+                  variant="outline"
+                  size="sm"
+                  onSelect={(p, n) => handleDownload("docx", p, n)}
+                  isLoading={isDownloading === "docx"}
+                  disabled={!!isDownloading}
+                  label="DOCX"
+                  icon={<FileText className="w-4 h-4 mr-1" />}
+                />
+                <SignerDownloadButton
+                  size="sm"
+                  onSelect={(p, n) => handleDownload("pdf", p, n)}
+                  onFetchBlob={(p, n) => suratApi.fetchPdfBlob(suratId, undefined, p, n)}
+                  isLoading={isDownloading === "pdf"}
+                  disabled={!!isDownloading}
+                  label="PDF"
+                  icon={<Download className="w-4 h-4 mr-1" />}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>
